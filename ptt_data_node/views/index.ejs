@@ -1,0 +1,22 @@
+
+
+<div class="title">
+    <%= title %>
+</div>
+<div class="json">
+<ul>
+<%var jdata = JSON.parse(json);%>
+<%for(var key in jdata) { 
+    var groupList = jdata[key].groupList; %>
+       <li><%=key  %></li>
+      
+<%      for(var i=0; i< groupList.length; ++i) { %>
+              <a href=<%=groupList[i].link%> ><%=groupList[i].title%></a><br>
+<%      } %> 
+
+<% } %>
+
+
+
+</ul>
+</div>

@@ -161,7 +161,7 @@ if __name__ == "__main__":
 	global groupData
 	groupData = {}
 	global pageCount
-	pageCount = 10
+	pageCount = 30
 
 	br = mechanize.Browser()
 	br.set_handle_robots(False) # ignore robots
