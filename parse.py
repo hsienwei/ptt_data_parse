@@ -6,12 +6,15 @@ from bs4 import BeautifulSoup, SoupStrainer
 import urllib
 import re
 import json
-
+from dateutil import parser
+import time
+import datetime
 
 def formProcess2(url):
 	global br
 	global pageCount
 	global groupData
+	global contextData2
 	print 'process list:' + url
 	print str(pageCount)
 	response = None
@@ -42,7 +45,7 @@ def formProcess2(url):
 			nextLink = 'http://www.ptt.cc' + pageLink['href']
 
 	#文章列表
-	for recordDiv in soup.findAll("div", {"class":"r-ent"}):
+	for recordDiv in reversed(soup.findAll("div", {"class":"r-ent"})):
 		titleDiv = recordDiv.find("div", {"class":"title"})
 		metaDiv = recordDiv.find("div", {"class":"meta"})
 
@@ -51,8 +54,23 @@ def formProcess2(url):
 			print '==='
 			print titleLink['href']
 			print titleLink.string.encode('utf8')
-			contentGet('http://www.ptt.cc' + titleLink['href'])
+			
+            
+			m = re.search('\/bbs\/([A-Za-z0-9]+)\/([A-Za-z0-9\.]+)\.html', titleLink['href'])
+			print m.groups()[0]
+			id = m.groups()[1]
+			
+			if id in contextData2:
+				object = contextData2[id]
+			else:
+				object = {}
+				contextData2[id] = object
 
+			object['link'] = 'http://www.ptt.cc' + titleLink['href']
+		
+	
+			contentGet(id, 'http://www.ptt.cc' + titleLink['href'])
+	
 			keyString = '';
 			if titleLink.string.encode('utf8').find('Re: ') != -1:  #回覆
 				keyString = titleLink.string.encode('utf8')[4:];
@@ -60,24 +78,31 @@ def formProcess2(url):
 				keyString = titleLink.string.encode('utf8');
 
 			if keyString in groupData.keys():
-				groupData[keyString]['groupList'].append({'title': titleLink.string.encode('utf8'), 'link':'http://www.ptt.cc' + titleLink['href']})
+				groupData[keyString]['groupList'].append(id)
 			else:
-				groupData[keyString] = {'groupList':[{'title': titleLink.string.encode('utf8'), 'link':'http://www.ptt.cc' + titleLink['href']}]}
+				groupData[keyString] = {'groupList':[id]}
 
 		dateDiv = metaDiv.find('div', {"class":"date"})	
 		authorDiv = metaDiv.find('div', {"class":"author"})
 		print dateDiv.string
 		print authorDiv.string	
 
-	pageCount = pageCount -1
-	if pageCount != 0:
+		if flagStop:
+			break
+
+	print '----====----==----'
+	print flagStop
+	if flagStop != True:
 		formProcess2(nextLink)
 
 
-def contentGet(contentLink):
+def contentGet(id, contentLink):
 	global br
 	global linkData
 	global contextData
+	global contextData2
+	global endTime
+	global flagStop
 	print contentLink
 	try:
 		response2 = br.open(contentLink)
@@ -104,7 +129,9 @@ def contentGet(contentLink):
 					pushBadCount = pushBadCount + 1	
 				else:
 					pushNormalCount = pushNormalCount + 1	
-		pushData = { 'g' : pushGoodCount, 'b': pushBadCount, 'n':pushNormalCount}
+		pushData = { 'all':pushGoodCount + pushBadCount + pushNormalCount,  'g' : pushGoodCount, 'b': pushBadCount, 'n':pushNormalCount}
+		object = contextData2[id]
+		object['push'] = pushData
 		contextData[contentLink] = { 'push': pushData}
 					
 		links = []			
@@ -120,7 +147,7 @@ def contentGet(contentLink):
 				print '--' +  link['href'].encode('utf8')
 
 				contenturl = ''
-				try:
+				'''try:
 					if link['href'].find('ppt.cc') != -1:
 						response3 = br.open(link['href'])
 						print 'ppt.cc : ' +  response3.geturl()
@@ -139,8 +166,8 @@ def contentGet(contentLink):
 						contenturl = response3.geturl()		
 					else:
 						contenturl = link['href']
-				except:		
-					contenturl = link['href']
+				except:		'''
+				contenturl = link['href']
 
 				links.append(contenturl)
 
@@ -150,7 +177,27 @@ def contentGet(contentLink):
 					linkData[contenturl] = pushGoodCount + pushBadCount + pushNormalCount;
 
 		contextData[contentLink]['link'] = links			
-					
+		
+		#時間
+		#<span class="article-meta-value">Tue Apr 15 00:07:21 2014</span>
+		for metaDiv in soup.findAll('div',  {"class":"article-metaline"}):
+			metaDivTag = metaDiv.find('span',  {"class":"article-meta-tag"})
+			metaDivValue = metaDiv.find('span',  {"class":"article-meta-value"})
+			if metaDivTag.string.encode('utf8').find('時間') != -1:
+				print metaDivValue.string
+				print parser.parse(metaDivValue.string)
+				object['time'] = parser.parse(metaDivValue.string).strftime("%Y-%m-%d %H:%M:%S")
+
+				contextTime = time.mktime(time.strptime(object['time'], '%Y-%m-%d %H:%M:%S'))
+				print contextTime
+				print endTime
+				if contextTime < endTime:
+					print '===end'
+					flagStop = True
+
+			if metaDivTag.string.encode('utf8').find('標題') != -1:
+				object['title'] = metaDivValue.string
+
 
 if __name__ == "__main__":
 	global br
@@ -162,6 +209,20 @@ if __name__ == "__main__":
 	groupData = {}
 	global pageCount
 	pageCount = 30
+	global contextData2
+	contextData2 = {}
+
+	global curTime
+	global endTime
+	global flagStop
+	flagStop = False
+	curTime = time.time()
+	print '=== start time ==='
+	print curTime
+	print datetime.datetime.fromtimestamp(curTime).strftime('%Y-%m-%d %H:%M:%S')
+	endTime = curTime - 60 * 30#60 * 60 * 24
+	print datetime.datetime.fromtimestamp(endTime).strftime('%Y-%m-%d %H:%M:%S')
+	print '=================='
 
 	br = mechanize.Browser()
 	br.set_handle_robots(False) # ignore robots
@@ -177,7 +238,7 @@ if __name__ == "__main__":
 		print key 
 		
 		for data in groupData[key]['groupList']:
-			print '--' + data['title'] + ":" + data['link'].encode('utf8')
+			print '--' + data
 
 	jsonStr = json.dumps(contextData, indent=4)
 	with open("contextData.json", "w") as f:
@@ -187,5 +248,16 @@ if __name__ == "__main__":
 		f.write(jsonStr)  
 	jsonStr = json.dumps(groupData, indent=4)
 	with open("groupData.json", "w") as f:
-		f.write(jsonStr)       	
+		f.write(jsonStr) 
+	jsonStr = json.dumps(contextData2, indent=4)
+	with open("contextData2.json", "w") as f:
+		f.write(jsonStr)	      	
 			
+	rankdata = {}
+	rankdata['g'] = sorted(contextData2.items(), key=lambda t: t[1]['push']['g'], reverse=True)[:10]
+	rankdata['b'] = sorted(contextData2.items(), key=lambda t: t[1]['push']['b'], reverse=True)[:10]
+	rankdata['t'] = sorted(contextData2.items(), key=lambda t: t[1]['push']['all'], reverse=True)[:10]
+	jsonStr = json.dumps(rankdata, indent=4)
+	with open("rankdata.json", "w") as f:
+		f.write(jsonStr) 
+	
