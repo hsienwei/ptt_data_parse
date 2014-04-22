@@ -1,22 +1,27 @@
-
-
-<div class="title">
-    <%= title %>
+<div>
+<% for(var i=0; i < s_all.length; ++i) { %>
+  <p><a href='<%= s_all[i]['link'] %>'><%= s_all[i]['title'] %></a>  </p>
+  <p>g = <%=s_all[i]['push']['g']%>, b = <%=s_all[i]['push']['b']%>, all = <%=s_all[i]['push']['all']%></p>
+<% }; %>
 </div>
-<div class="json">
-<ul>
-<%var jdata = JSON.parse(json);%>
-<%for(var key in jdata) { 
-    var groupList = jdata[key].groupList; %>
-       <li><%=key  %></li>
-      
-<%      for(var i=0; i< groupList.length; ++i) { %>
-              <a href=<%=groupList[i].link%> ><%=groupList[i].title%></a><br>
-<%      } %> 
-
-<% } %>
-
-
-
-</ul>
+---
+<div>
+<% for(var i=0; i < s_g.length; ++i) { %>
+  <p><a href='<%= s_g[i]['link'] %>'><%= s_g[i]['title'] %></a>  </p>
+  <p>g = <%=s_g[i]['push']['g']%>, b = <%=s_g[i]['push']['b']%>, all = <%=s_g[i]['push']['all']%></p>
+<% }; %>
+</div>
+---
+<div>
+<% for(var i=0; i < s_b.length; ++i) { %>
+  <p><a href='<%= s_b[i]['link'] %>'><%= s_b[i]['title'] %></a>  </p>
+  <p>g = <%=s_b[i]['push']['g']%>, b = <%=s_b[i]['push']['b']%>, all = <%=s_b[i]['push']['all']%></p>
+<% }; %>
+</div>
+---
+<div>
+<% for(var i=0; i < g_all.length; ++i) { %>
+  <p><%= g_all[i]['key'] %>  </p>
+  <p>g = <%=g_all[i]['push']['g']%>, b = <%=g_all[i]['push']['b']%>, all = <%=g_all[i]['push']['all']%></p>
+<% }; %>
 </div>

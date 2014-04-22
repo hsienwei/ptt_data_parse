@@ -9,6 +9,7 @@ import json
 from dateutil import parser
 import time
 import datetime
+import pymongo
 
 def formProcess2(url):
 	global br
@@ -64,6 +65,7 @@ def formProcess2(url):
 				object = contextData2[id]
 			else:
 				object = {}
+				object['id'] = id
 				contextData2[id] = object
 
 			object['link'] = 'http://www.ptt.cc' + titleLink['href']
@@ -80,7 +82,7 @@ def formProcess2(url):
 			if keyString in groupData.keys():
 				groupData[keyString]['groupList'].append(id)
 			else:
-				groupData[keyString] = {'groupList':[id]}
+				groupData[keyString] = {'key':keyString, 'groupList':[id]}
 
 		dateDiv = metaDiv.find('div', {"class":"date"})	
 		authorDiv = metaDiv.find('div', {"class":"author"})
@@ -186,9 +188,12 @@ def contentGet(id, contentLink):
 			if metaDivTag.string.encode('utf8').find('時間') != -1:
 				print metaDivValue.string
 				print parser.parse(metaDivValue.string)
-				object['time'] = parser.parse(metaDivValue.string).strftime("%Y-%m-%d %H:%M:%S")
+				#object['time'] = parser.parse(metaDivValue.string).strftime("%Y-%m-%d %H:%M:%S")
+				#contextTime = time.mktime(time.strptime(object['time'], '%Y-%m-%d %H:%M:%S'))
+				parsedTimeStr = parser.parse(metaDivValue.string).strftime("%Y-%m-%d %H:%M:%S")
+				contextTime = time.mktime(time.strptime(parsedTimeStr, '%Y-%m-%d %H:%M:%S'))
+				object['time'] = contextTime
 
-				contextTime = time.mktime(time.strptime(object['time'], '%Y-%m-%d %H:%M:%S'))
 				print contextTime
 				print endTime
 				if contextTime < endTime:
@@ -200,6 +205,7 @@ def contentGet(id, contentLink):
 
 
 if __name__ == "__main__":
+	
 	global br
 	global linkData
 	linkData = {}
@@ -221,43 +227,160 @@ if __name__ == "__main__":
 	print curTime
 	print datetime.datetime.fromtimestamp(curTime).strftime('%Y-%m-%d %H:%M:%S')
 	endTime = curTime - 60 * 30#60 * 60 * 24
+	fiveDayTime = curTime - 60 * 60 * 24 * 5
 	print datetime.datetime.fromtimestamp(endTime).strftime('%Y-%m-%d %H:%M:%S')
 	print '=================='
 
+	#parse
 	br = mechanize.Browser()
 	br.set_handle_robots(False) # ignore robots
     #dataCollect();
 	formProcess2("http://www.ptt.cc/bbs/Gossiping/index.html")#HatePolitics
+
+	#print
 	for key in linkData.keys():
 		print key.encode('utf8') + ':' + str(linkData[key])
 	for key in contextData.keys():
 		print key.encode('utf8') + ':' + str(contextData[key]['push']) + ' - ' + str(contextData[key]['push']['g'] + contextData[key]['push']['b'] + contextData[key]['push']['n'])
 		for link in contextData[key]['link']:
-			print '-- link:' + link
-	for key in groupData.keys():
-		print key 
-		
-		for data in groupData[key]['groupList']:
-			print '--' + data
-
+			print '-- link:' + link.encode('utf8')
+	
 	jsonStr = json.dumps(contextData, indent=4)
 	with open("contextData.json", "w") as f:
 		f.write(jsonStr)	
 	jsonStr = json.dumps(linkData, indent=4)
 	with open("linkData.json", "w") as f:
 		f.write(jsonStr)  
-	jsonStr = json.dumps(groupData, indent=4)
-	with open("groupData.json", "w") as f:
-		f.write(jsonStr) 
 	jsonStr = json.dumps(contextData2, indent=4)
 	with open("contextData2.json", "w") as f:
 		f.write(jsonStr)	      	
+	
+
+	for key in groupData.keys():
+		print key 
+		push = {"all": 0, "b": 0, "g": 0, "n": 0}
+		for data in groupData[key]['groupList']:
+			print '--' + data
 			
+			push['b'] = push['b'] + contextData2[data]['push']['b']
+			push['g'] = push['g'] + contextData2[data]['push']['g']
+			push['n'] = push['n'] + contextData2[data]['push']['n']
+			push['all'] = push['all'] + contextData2[data]['push']['all']
+		groupData[key]['push'] = push
+
+	#save to file
+	jsonStr = json.dumps(groupData, indent=4)
+	with open("groupData.json", "w") as f:
+		f.write(jsonStr) 
+		
+	
+	#save to db
+	conn=pymongo.Connection('54.251.147.205',27017)
+	db = conn.Gossiping
+
+	#單一文章
+	for key in contextData2.keys():
+		findDoc = db.single.find_one({'id': key})
+		if findDoc is None:
+			db.single.insert(contextData2[key])
+		else:
+			findDoc['push'] = contextData2[key]['push']
+			db.single.save(findDoc)
+
+	#群組文章
+	for key in groupData.keys():
+		findDoc = db.group.find_one({'key': key})
+		if findDoc is None:
+			groupData[key]['time'] = curTime
+			db.group.insert(groupData[key])
+		else:
+			#data reset
+			for recId in groupData[key]['groupList']:
+				if not recId in findDoc['groupList']:
+					findDoc['groupList'].append(recId)
+
+			print findDoc['groupList']
+					
+			pushData = { 'g': 0, 'b': 0, 'n': 0, 'all': 0 }	
+			for rec in db.single.find({"id":{"$in":findDoc['groupList']}}):
+				pushData['g'] += rec['push']['g']
+				pushData['n'] += rec['push']['n']
+				pushData['b'] += rec['push']['b']
+			pushData['all'] = pushData['g'] + pushData['n'] + pushData['b']
+			findDoc['push'] = pushData
+			db.group.save(findDoc)	
+			
+	#排行資料
+	
+	#文章資料
+	'''		
 	rankdata = {}
 	rankdata['g'] = sorted(contextData2.items(), key=lambda t: t[1]['push']['g'], reverse=True)[:10]
 	rankdata['b'] = sorted(contextData2.items(), key=lambda t: t[1]['push']['b'], reverse=True)[:10]
 	rankdata['t'] = sorted(contextData2.items(), key=lambda t: t[1]['push']['all'], reverse=True)[:10]
+	rankdata['gg'] = sorted(groupData.items(), key=lambda t: t[1]['push']['g'], reverse=True)[:10]
+	rankdata['gb'] = sorted(groupData.items(), key=lambda t: t[1]['push']['b'], reverse=True)[:10]
+	rankdata['gt'] = sorted(groupData.items(), key=lambda t: t[1]['push']['all'], reverse=True)[:10]
 	jsonStr = json.dumps(rankdata, indent=4)
 	with open("rankdata.json", "w") as f:
 		f.write(jsonStr) 
-	
+		'''
+
+	#資料庫資料
+	rankdata = {}
+	'''
+	for a in db.single.find({'time':{"$gte":fiveDayTime}}, { '_id': 0}) \
+					  .sort([('push.all', pymongo.DESCENDING)]) \
+					  .limit(5):
+		print a['push']['all']'''
+	rankdata['t'] = list(db.single.find({'time':{"$gte":fiveDayTime}}, { '_id': 0}) \
+					  .sort([('push.all', pymongo.DESCENDING)]) \
+					  .limit(5))	
+	'''
+	for a in db.single.find({'time':{"$gte":fiveDayTime}}, { '_id': 0}) \
+					  .sort([('push.g', pymongo.DESCENDING)]) \
+					  .limit(5):
+		print a['push']['g']'''
+	rankdata['g'] = list(db.single.find({'time':{"$gte":fiveDayTime}}, { '_id': 0}) \
+					  .sort([('push.g', pymongo.DESCENDING)]) \
+					  .limit(5))
+	'''
+	for a in db.single.find({'time':{"$gte":fiveDayTime}}, { '_id': 0}) \
+					  .sort([('push.b', pymongo.DESCENDING)]) \
+					  .limit(5):
+		print a['push']['b']'''	
+	rankdata['b'] = list(db.single.find({'time':{"$gte":fiveDayTime}}, { '_id': 0}) \
+					  .sort([('push.b', pymongo.DESCENDING)]) \
+					  .limit(5))
+
+	'''print '---'
+	for a in db.group.find({'time':{"$gte":fiveDayTime}}, { '_id': 0}) \
+					  .sort([('push.all', pymongo.DESCENDING)]) \
+					  .limit(5):
+		print a['push']['all']'''
+	rankdata['gt'] = list(db.group.find({'time':{"$gte":fiveDayTime}}, { '_id': 0}) \
+					  .sort([('push.all', pymongo.DESCENDING)]) \
+					  .limit(5))
+	'''				  	
+	for a in db.group.find({'time':{"$gte":fiveDayTime}}, { '_id': 0}) \
+					  .sort([('push.g', pymongo.DESCENDING)]) \
+					  .limit(5):		  
+		print a['push']['g']'''
+	rankdata['gg'] = list(db.group.find({'time':{"$gte":fiveDayTime}}, { '_id': 0}) \
+					  .sort([('push.g', pymongo.DESCENDING)]) \
+					  .limit(5))
+	'''				  	
+	for a in db.group.find({'time':{"$gte":fiveDayTime}}, { '_id': 0}) \
+					  .sort([('push.b', pymongo.DESCENDING)]) \
+					  .limit(5):		  
+		print a['push']['b']	'''
+	rankdata['gb'] = list(db.group.find({'time':{"$gte":fiveDayTime}}, { '_id': 0}) \
+					  .sort([('push.b', pymongo.DESCENDING)]) \
+					  .limit(5))
+	rankdata['time'] = curTime
+
+	jsonStr = json.dumps(rankdata, indent=4)
+	with open("rankdata.json", "w") as f:
+		f.write(jsonStr) 				  	
+		
+				
