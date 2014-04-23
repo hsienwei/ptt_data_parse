@@ -226,7 +226,7 @@ if __name__ == "__main__":
 	print '=== start time ==='
 	print curTime
 	print datetime.datetime.fromtimestamp(curTime).strftime('%Y-%m-%d %H:%M:%S')
-	endTime = curTime - 60 * 30#60 * 60 * 24
+	endTime = curTime - 60*30#60 * 60 * 24
 	fiveDayTime = curTime - 60 * 60 * 24 * 5
 	print datetime.datetime.fromtimestamp(endTime).strftime('%Y-%m-%d %H:%M:%S')
 	print '=================='
@@ -261,7 +261,7 @@ if __name__ == "__main__":
 		push = {"all": 0, "b": 0, "g": 0, "n": 0}
 		for data in groupData[key]['groupList']:
 			print '--' + data
-			
+			print contextData2[data]['push']
 			push['b'] = push['b'] + contextData2[data]['push']['b']
 			push['g'] = push['g'] + contextData2[data]['push']['g']
 			push['n'] = push['n'] + contextData2[data]['push']['n']
@@ -275,7 +275,8 @@ if __name__ == "__main__":
 		
 	
 	#save to db
-	conn=pymongo.Connection('54.251.147.205',27017)
+	#conn=pymongo.Connection('54.251.147.205',27017)
+	conn=pymongo.Connection('127.0.0.1',27017)
 	db = conn.Gossiping
 
 	#單一文章
@@ -298,6 +299,7 @@ if __name__ == "__main__":
 			for recId in groupData[key]['groupList']:
 				if not recId in findDoc['groupList']:
 					findDoc['groupList'].append(recId)
+					findDoc['time'] = curTime
 
 			print findDoc['groupList']
 					
@@ -328,59 +330,48 @@ if __name__ == "__main__":
 
 	#資料庫資料
 	rankdata = {}
-	'''
-	for a in db.single.find({'time':{"$gte":fiveDayTime}}, { '_id': 0}) \
-					  .sort([('push.all', pymongo.DESCENDING)]) \
-					  .limit(5):
-		print a['push']['all']'''
 	rankdata['t'] = list(db.single.find({'time':{"$gte":fiveDayTime}}, { '_id': 0}) \
 					  .sort([('push.all', pymongo.DESCENDING)]) \
-					  .limit(5))	
-	'''
-	for a in db.single.find({'time':{"$gte":fiveDayTime}}, { '_id': 0}) \
-					  .sort([('push.g', pymongo.DESCENDING)]) \
-					  .limit(5):
-		print a['push']['g']'''
+					  .limit(50))	
 	rankdata['g'] = list(db.single.find({'time':{"$gte":fiveDayTime}}, { '_id': 0}) \
 					  .sort([('push.g', pymongo.DESCENDING)]) \
-					  .limit(5))
-	'''
-	for a in db.single.find({'time':{"$gte":fiveDayTime}}, { '_id': 0}) \
-					  .sort([('push.b', pymongo.DESCENDING)]) \
-					  .limit(5):
-		print a['push']['b']'''	
+					  .limit(50))
 	rankdata['b'] = list(db.single.find({'time':{"$gte":fiveDayTime}}, { '_id': 0}) \
 					  .sort([('push.b', pymongo.DESCENDING)]) \
-					  .limit(5))
+					  .limit(50))
 
-	'''print '---'
-	for a in db.group.find({'time':{"$gte":fiveDayTime}}, { '_id': 0}) \
-					  .sort([('push.all', pymongo.DESCENDING)]) \
-					  .limit(5):
-		print a['push']['all']'''
 	rankdata['gt'] = list(db.group.find({'time':{"$gte":fiveDayTime}}, { '_id': 0}) \
 					  .sort([('push.all', pymongo.DESCENDING)]) \
-					  .limit(5))
-	'''				  	
-	for a in db.group.find({'time':{"$gte":fiveDayTime}}, { '_id': 0}) \
-					  .sort([('push.g', pymongo.DESCENDING)]) \
-					  .limit(5):		  
-		print a['push']['g']'''
+					  .limit(50))
+
+	for gData in rankdata['gt']:
+		gData['groupListData'] = list(db.single.find({"id":{"$in":gData['groupList']}}, { '_id': 0}) \
+					  				.sort([('time', pymongo.ASCENDING)]) \
+					  				.limit(50))
+
 	rankdata['gg'] = list(db.group.find({'time':{"$gte":fiveDayTime}}, { '_id': 0}) \
 					  .sort([('push.g', pymongo.DESCENDING)]) \
-					  .limit(5))
-	'''				  	
-	for a in db.group.find({'time':{"$gte":fiveDayTime}}, { '_id': 0}) \
-					  .sort([('push.b', pymongo.DESCENDING)]) \
-					  .limit(5):		  
-		print a['push']['b']	'''
+					  .limit(50))
+	for gData in rankdata['gg']:
+		gData['groupListData'] = list(db.single.find({"id":{"$in":gData['groupList']}}, { '_id': 0}) \
+					  				.sort([('time', pymongo.ASCENDING)]) \
+					  				.limit(50))
 	rankdata['gb'] = list(db.group.find({'time':{"$gte":fiveDayTime}}, { '_id': 0}) \
 					  .sort([('push.b', pymongo.DESCENDING)]) \
-					  .limit(5))
+					  .limit(50))
+	for gData in rankdata['gb']:
+		gData['groupListData'] = list(db.single.find({"id":{"$in":gData['groupList']}}, { '_id': 0}) \
+					  				.sort([('time', pymongo.ASCENDING)]) \
+					  				.limit(50))
 	rankdata['time'] = curTime
+
+
+	
 
 	jsonStr = json.dumps(rankdata, indent=4)
 	with open("rankdata.json", "w") as f:
-		f.write(jsonStr) 				  	
+		f.write(jsonStr) 	
+
+	db.rank.insert(rankdata)				  	
 		
 				

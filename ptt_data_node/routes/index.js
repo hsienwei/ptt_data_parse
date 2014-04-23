@@ -22,6 +22,7 @@ exports.index = function(req, res){
     timeStemp -= 1000 * 60*60*24*5;
 
 	db.open(function() {
+		/*
 		async.parallel({
     			single: function(callback1){
 					db.collection('single', function(err, collection) {
@@ -76,6 +77,18 @@ exports.index = function(req, res){
     			db.close();
 
 			});
+		*/
+
+
+		db.collection('rank', function(err, collection) {
+			collection.find({}, {limit:1, fields:{'_id': 0}})
+					  .sort({'time': -1})
+					  .toArray(function(err, docs) {
+					  	console.log(docs);
+            			res.render('index', { rank: docs[0]});
+    					db.close();
+        			   });
+		});
 	});
   	
 };

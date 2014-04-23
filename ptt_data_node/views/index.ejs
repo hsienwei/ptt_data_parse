@@ -1,27 +1,50 @@
 <div>
-<% for(var i=0; i < s_all.length; ++i) { %>
-  <p><a href='<%= s_all[i]['link'] %>'><%= s_all[i]['title'] %></a>  </p>
-  <p>g = <%=s_all[i]['push']['g']%>, b = <%=s_all[i]['push']['b']%>, all = <%=s_all[i]['push']['all']%></p>
+<% for(var i=0; i < rank['t'].length; ++i) { %>
+  <p><a href='<%= rank['t'][i]['link'] %>'><%= rank['t'][i]['title'] %></a>  </p>
+  <p>g = <%=rank['t'][i]['push']['g']%>, b = <%=rank['t'][i]['push']['b']%>, all = <%=rank['t'][i]['push']['all']%></p>
 <% }; %>
 </div>
 ---
 <div>
-<% for(var i=0; i < s_g.length; ++i) { %>
-  <p><a href='<%= s_g[i]['link'] %>'><%= s_g[i]['title'] %></a>  </p>
-  <p>g = <%=s_g[i]['push']['g']%>, b = <%=s_g[i]['push']['b']%>, all = <%=s_g[i]['push']['all']%></p>
+<% for(var i=0; i < rank['g'].length; ++i) { %>
+  <p><a href='<%= rank['g'][i]['link'] %>'><%= rank['g'][i]['title'] %></a>  </p>
+  <p>g = <%=rank['g'][i]['push']['g']%>, b = <%=rank['g'][i]['push']['b']%>, all = <%=rank['g'][i]['push']['all']%></p>
 <% }; %>
 </div>
 ---
 <div>
-<% for(var i=0; i < s_b.length; ++i) { %>
-  <p><a href='<%= s_b[i]['link'] %>'><%= s_b[i]['title'] %></a>  </p>
-  <p>g = <%=s_b[i]['push']['g']%>, b = <%=s_b[i]['push']['b']%>, all = <%=s_b[i]['push']['all']%></p>
+<% for(var i=0; i < rank['b'].length; ++i) { %>
+  <p><a href='<%= rank['b'][i]['link'] %>'><%= rank['b'][i]['title'] %></a>  </p>
+  <p>g = <%=rank['b'][i]['push']['g']%>, b = <%=rank['b'][i]['push']['b']%>, all = <%=rank['b'][i]['push']['all']%></p>
 <% }; %>
 </div>
 ---
 <div>
-<% for(var i=0; i < g_all.length; ++i) { %>
-  <p><%= g_all[i]['key'] %>  </p>
-  <p>g = <%=g_all[i]['push']['g']%>, b = <%=g_all[i]['push']['b']%>, all = <%=g_all[i]['push']['all']%></p>
+<% for(var i=0; i < rank['gt'].length; ++i) { %>
+  <p><%= rank['gt'][i]['key'] %>  </p>
+  <p>g = <%=rank['gt'][i]['push']['g']%>, b = <%=rank['gt'][i]['push']['b']%>, all = <%=rank['gt'][i]['push']['all']%></p>
+  <% for(var j=0; j < rank['gt'][i]['groupListData'].length; ++j) { %>
+  <blockquote><p><a href='<%= rank['gt'][i]['groupListData'][j]['link'] %>'><%=rank['gt'][i]['groupListData'][j]['title'] %></a>  g = <%=rank['gt'][i]['groupListData'][j]['push']['g']%>, b = <%=rank['gt'][i]['groupListData'][j]['push']['b']%>, all = <%=rank['gt'][i]['groupListData'][j]['push']['all']%></p></blockquote>
+  <% }; %>
+<% }; %>
+</div>
+---
+<div>
+<% for(var i=0; i < rank['gg'].length; ++i) { %>
+  <p><%= rank['gg'][i]['key'] %>  </p>
+  <p>g = <%=rank['gg'][i]['push']['g']%>, b = <%=rank['gg'][i]['push']['b']%>, all = <%=rank['gg'][i]['push']['all']%></p>
+  <% for(var j=0; j < rank['gg'][i]['groupListData'].length; ++j) { %>
+  <blockquote><p><a href='<%= rank['gg'][i]['groupListData'][j]['link'] %>'><%=rank['gg'][i]['groupListData'][j]['title'] %></a>  </p></blockquote>
+  <% }; %>
+<% }; %>
+</div>
+---
+<div>
+<% for(var i=0; i < rank['gb'].length; ++i) { %>
+  <p><%= rank['gb'][i]['key'] %>  </p>
+  <p>g = <%=rank['gb'][i]['push']['g']%>, b = <%=rank['gb'][i]['push']['b']%>, all = <%=rank['gb'][i]['push']['all']%></p>
+  <% for(var j=0; j < rank['gb'][i]['groupListData'].length; ++j) { %>
+  <blockquote><p><a href='<%= rank['gb'][i]['groupListData'][j]['link'] %>'><%=rank['gb'][i]['groupListData'][j]['title'] %></a>  </p></blockquote>
+  <% }; %>
 <% }; %>
 </div>
