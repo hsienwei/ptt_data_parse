@@ -13,11 +13,10 @@ import pymongo
 
 def formProcess2(url):
 	global br
-	global pageCount
 	global groupData
 	global contextData2
 	print 'process list:' + url
-	print str(pageCount)
+
 	response = None
 	time.sleep(1)
 	while (response is None):
@@ -204,38 +203,33 @@ def contentGet(id, contentLink):
 				object['title'] = metaDivValue.string
 
 
-if __name__ == "__main__":
-	
-	global br
+def boardProcess(boardData):
 	global linkData
-	linkData = {}
 	global contextData
-	contextData = {}
 	global groupData
-	groupData = {}
-	global pageCount
-	pageCount = 30
 	global contextData2
-	contextData2 = {}
-
+	
 	global curTime
 	global endTime
 	global flagStop
+
+	linkData = {}
+	contextData = {}
+	groupData = {}
+	contextData2 = {}
 	flagStop = False
 	curTime = time.time()
 	print '=== start time ==='
 	print curTime
 	print datetime.datetime.fromtimestamp(curTime).strftime('%Y-%m-%d %H:%M:%S')
-	endTime = curTime - 60*30#60 * 60 * 24
-	fiveDayTime = curTime - 60 * 60 * 24 * 5
+	endTime = curTime - 60 * 60 * 24 * boardData['parseDay'] 
+	rangeDay = curTime - 60 * 60 * 24 * boardData['rankDay']
 	print datetime.datetime.fromtimestamp(endTime).strftime('%Y-%m-%d %H:%M:%S')
 	print '=================='
 
-	#parse
-	br = mechanize.Browser()
-	br.set_handle_robots(False) # ignore robots
     #dataCollect();
-	formProcess2("http://www.ptt.cc/bbs/Gossiping/index.html")#HatePolitics
+	#board = 'beauty'#'Gossiping'
+	formProcess2("http://www.ptt.cc/bbs/" + boardData['name'] + "/index.html")#HatePolitics
 
 	#print
 	for key in linkData.keys():
@@ -277,7 +271,7 @@ if __name__ == "__main__":
 	#save to db
 	#conn=pymongo.Connection('54.251.147.205',27017)
 	conn=pymongo.Connection('127.0.0.1',27017)
-	db = conn.Gossiping
+	db = conn[boardData['name']]#conn['Gossiping']
 
 	#單一文章
 	for key in contextData2.keys():
@@ -330,17 +324,17 @@ if __name__ == "__main__":
 
 	#資料庫資料
 	rankdata = {}
-	rankdata['t'] = list(db.single.find({'time':{"$gte":fiveDayTime}}, { '_id': 0}) \
+	rankdata['t'] = list(db.single.find({'time':{"$gte":rangeDay}}, { '_id': 0}) \
 					  .sort([('push.all', pymongo.DESCENDING)]) \
 					  .limit(50))	
-	rankdata['g'] = list(db.single.find({'time':{"$gte":fiveDayTime}}, { '_id': 0}) \
+	rankdata['g'] = list(db.single.find({'time':{"$gte":rangeDay}}, { '_id': 0}) \
 					  .sort([('push.g', pymongo.DESCENDING)]) \
 					  .limit(50))
-	rankdata['b'] = list(db.single.find({'time':{"$gte":fiveDayTime}}, { '_id': 0}) \
+	rankdata['b'] = list(db.single.find({'time':{"$gte":rangeDay}}, { '_id': 0}) \
 					  .sort([('push.b', pymongo.DESCENDING)]) \
 					  .limit(50))
 
-	rankdata['gt'] = list(db.group.find({'time':{"$gte":fiveDayTime}}, { '_id': 0}) \
+	rankdata['gt'] = list(db.group.find({'time':{"$gte":rangeDay}}, { '_id': 0}) \
 					  .sort([('push.all', pymongo.DESCENDING)]) \
 					  .limit(50))
 
@@ -349,14 +343,14 @@ if __name__ == "__main__":
 					  				.sort([('time', pymongo.ASCENDING)]) \
 					  				.limit(50))
 
-	rankdata['gg'] = list(db.group.find({'time':{"$gte":fiveDayTime}}, { '_id': 0}) \
+	rankdata['gg'] = list(db.group.find({'time':{"$gte":rangeDay}}, { '_id': 0}) \
 					  .sort([('push.g', pymongo.DESCENDING)]) \
 					  .limit(50))
 	for gData in rankdata['gg']:
 		gData['groupListData'] = list(db.single.find({"id":{"$in":gData['groupList']}}, { '_id': 0}) \
 					  				.sort([('time', pymongo.ASCENDING)]) \
 					  				.limit(50))
-	rankdata['gb'] = list(db.group.find({'time':{"$gte":fiveDayTime}}, { '_id': 0}) \
+	rankdata['gb'] = list(db.group.find({'time':{"$gte":rangeDay}}, { '_id': 0}) \
 					  .sort([('push.b', pymongo.DESCENDING)]) \
 					  .limit(50))
 	for gData in rankdata['gb']:
@@ -372,6 +366,23 @@ if __name__ == "__main__":
 	with open("rankdata.json", "w") as f:
 		f.write(jsonStr) 	
 
-	db.rank.insert(rankdata)				  	
+	db.rank.insert(rankdata)
+
+if __name__ == "__main__":
+	
+	global br
+	
+	#parse
+	br = mechanize.Browser()
+	br.set_handle_robots(False) # ignore robots
+
+	processBoard = [{'name': 'Gossiping'   , 'parseDay':1, 'rankDay':3 },  \
+					{'name': 'beauty'      , 'parseDay':3, 'rankDay':3}]
+
+	for boardData in processBoard:
+		print '********* process' + boardData['name'] + '*********'
+		boardProcess(boardData)
+
+					  	
 		
 				
