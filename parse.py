@@ -116,6 +116,7 @@ def contentGet(id, contentLink):
 		pushGoodCount = 0
 		pushBadCount = 0
 		pushNormalCount = 0
+		print 'contentGet start parse push'
 		for pushdiv in soup.findAll("div", {"class":"push"}):
 			#print pushdiv
 			#push
@@ -130,12 +131,14 @@ def contentGet(id, contentLink):
 					pushBadCount = pushBadCount + 1	
 				else:
 					pushNormalCount = pushNormalCount + 1	
+		print 'contentGet end parse push'
 		pushData = { 'all':pushGoodCount + pushBadCount + pushNormalCount,  'g' : pushGoodCount, 'b': pushBadCount, 'n':pushNormalCount}
 		object = contextData2[id]
 		object['push'] = pushData
 		contextData[contentLink] = { 'push': pushData}
 					
-		links = []			
+		links = []		
+		print 'contentGet start parse link'	
 		for link in soup.findAll('a', href=True):
 			m = re.search('http://.+', link['href'])
 			if not m is None:
@@ -176,11 +179,12 @@ def contentGet(id, contentLink):
 					linkData[contenturl] = linkData[contenturl] + pushGoodCount + pushBadCount + pushNormalCount;
 				else:
 					linkData[contenturl] = pushGoodCount + pushBadCount + pushNormalCount;
-
+		print 'contentGet end parse link'
 		contextData[contentLink]['link'] = links			
 		
 		#時間
 		#<span class="article-meta-value">Tue Apr 15 00:07:21 2014</span>
+		print 'contentGet start parse time'
 		for metaDiv in soup.findAll('div',  {"class":"article-metaline"}):
 			metaDivTag = metaDiv.find('span',  {"class":"article-meta-tag"})
 			metaDivValue = metaDiv.find('span',  {"class":"article-meta-value"})
@@ -201,6 +205,7 @@ def contentGet(id, contentLink):
 
 			if metaDivTag.string.encode('utf8').find('標題') != -1:
 				object['title'] = metaDivValue.string
+		print 'contentGet stop parse time'		
 
 
 def boardProcess(boardData):
@@ -269,8 +274,8 @@ def boardProcess(boardData):
 		
 	
 	#save to db
-	#conn=pymongo.Connection('54.251.147.205',27017)
-	conn=pymongo.Connection('127.0.0.1',27017)
+	conn=pymongo.Connection('54.251.147.205',27017)
+	#conn=pymongo.Connection('127.0.0.1',27017)
 	db = conn[boardData['name']]#conn['Gossiping']
 
 	#單一文章
