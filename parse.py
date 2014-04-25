@@ -37,7 +37,7 @@ def formProcess2(url):
 	#nextLink = None
 
 
-	soup = BeautifulSoup(response, features="html5lib");
+	soup = BeautifulSoup(response, features='lxml');
 
 	#下一頁面連結取得
 	pageLinkDiv = soup.find("div", {"class":"btn-group pull-right"})
@@ -113,7 +113,7 @@ def contentGet(id, contentLink):
 		response2 = None
 
 	if not response2 is None:
-		soup = BeautifulSoup(response2, features="html5lib")
+		soup = BeautifulSoup(response2, features='lxml')
 		pushGoodCount = 0
 		pushBadCount = 0
 		pushNormalCount = 0
@@ -388,8 +388,8 @@ if __name__ == "__main__":
 	br = mechanize.Browser()
 	br.set_handle_robots(False) # ignore robots
 
-	processBoard = [{'name': 'Gossiping'   , 'parseHour':24, 'rankHour':72 },  \
-					{'name': 'beauty'      , 'parseHour':72, 'rankHour':72}]
+	processBoard = [{'name': 'Gossiping'   , 'parseHour':1, 'rankHour':72 },  \
+					{'name': 'beauty'      , 'parseHour':1, 'rankHour':72}]
 
 	for boardData in processBoard:
 		print '********* process' + boardData['name'] + '*********'
