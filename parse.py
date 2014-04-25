@@ -10,11 +10,13 @@ from dateutil import parser
 import time
 import datetime
 import pymongo
+import copy
 
 def formProcess2(url):
 	global br
 	global groupData
 	global contextData2
+	global listLink
 	print 'process list:' + url
 
 	response = None
@@ -33,19 +35,23 @@ def formProcess2(url):
 		response = br.submit(name='yes', label='yes')
 
 	nextIdx = 0;
-	nextLink = None
+	#nextLink = None
 
-
-	soup = BeautifulSoup(response);
+	only_div_btngroup = SoupStrainer("div", {"class":"btn-group pull-right"})
+	only_div_r_ent = SoupStrainer("div", {"class":"r-ent"})
+	#response2 = copy.copy(response)
+	soup = BeautifulSoup(copy.copy(response), features='lxml', parse_only=only_div_btngroup);
+	soup2 = BeautifulSoup(copy.copy(response), features='lxml', parse_only=only_div_r_ent);
 
 	#下一頁面連結取得
 	pageLinkDiv = soup.find("div", {"class":"btn-group pull-right"})
 	for pageLink in pageLinkDiv.findAll('a', href=True):
 		if pageLink.string.encode('utf8').find('上頁') != -1:
-			nextLink = 'http://www.ptt.cc' + pageLink['href']
+			listLink = 'http://www.ptt.cc' + pageLink['href']
 
 	#文章列表
-	for recordDiv in reversed(soup.findAll("div", {"class":"r-ent"})):
+
+	for recordDiv in reversed(soup2.findAll("div", {"class":"r-ent"})):
 		titleDiv = recordDiv.find("div", {"class":"title"})
 		metaDiv = recordDiv.find("div", {"class":"meta"})
 
@@ -69,7 +75,7 @@ def formProcess2(url):
 
 			object['link'] = 'http://www.ptt.cc' + titleLink['href']
 		
-	
+			time.sleep(0.2)
 			contentGet(id, 'http://www.ptt.cc' + titleLink['href'])
 	
 			keyString = '';
@@ -93,8 +99,8 @@ def formProcess2(url):
 
 	print '----====----==----'
 	print flagStop
-	if flagStop != True:
-		formProcess2(nextLink)
+	#if flagStop != True:
+	#	formProcess2(nextLink)
 
 
 def contentGet(id, contentLink):
@@ -106,18 +112,20 @@ def contentGet(id, contentLink):
 	global flagStop
 	print contentLink
 	try:
-		response2 = br.open(contentLink)
-		print 'contentGet:' + response2.geturl()
+		response = br.open(contentLink)
+		print 'contentGet:' + response.geturl()
 	except:	
-		response2 = None
+		response = None
 
-	if not response2 is None:
-		soup = BeautifulSoup(response2)
+	if not response is None:
+		only_div_push = SoupStrainer("div", {"class":"push"})
+		soup = BeautifulSoup(copy.copy(response), features='lxml', parse_only=only_div_push)
 		pushGoodCount = 0
 		pushBadCount = 0
 		pushNormalCount = 0
 		print 'contentGet start parse push'
 		for pushdiv in soup.findAll("div", {"class":"push"}):
+			print 'contentGet parse push'
 			#print pushdiv
 			#push
 			pushTag = pushdiv.find("span", {"class":"hl push-tag"})
@@ -138,8 +146,11 @@ def contentGet(id, contentLink):
 		contextData[contentLink] = { 'push': pushData}
 					
 		links = []		
+		only_link = SoupStrainer('a', href=True)
+		soup = BeautifulSoup(copy.copy(response), features='lxml', parse_only=only_link)
 		print 'contentGet start parse link'	
 		for link in soup.findAll('a', href=True):
+			print 'contentGet parse link'
 			m = re.search('http://.+', link['href'])
 			if not m is None:
 
@@ -184,8 +195,11 @@ def contentGet(id, contentLink):
 		
 		#時間
 		#<span class="article-meta-value">Tue Apr 15 00:07:21 2014</span>
+		only_div_acticlemeta = SoupStrainer('div',  {"class":"article-metaline"})
+		soup = BeautifulSoup(copy.copy(response), features='lxml', parse_only=only_div_acticlemeta)
 		print 'contentGet start parse time'
 		for metaDiv in soup.findAll('div',  {"class":"article-metaline"}):
+			print 'contentGet parse time'
 			metaDivTag = metaDiv.find('span',  {"class":"article-meta-tag"})
 			metaDivValue = metaDiv.find('span',  {"class":"article-meta-value"})
 			if metaDivTag.string.encode('utf8').find('時間') != -1:
@@ -217,6 +231,7 @@ def boardProcess(boardData):
 	global curTime
 	global endTime
 	global flagStop
+	global listLink
 
 	linkData = {}
 	contextData = {}
@@ -227,14 +242,16 @@ def boardProcess(boardData):
 	print '=== start time ==='
 	print curTime
 	print datetime.datetime.fromtimestamp(curTime).strftime('%Y-%m-%d %H:%M:%S')
-	endTime = curTime - 60 * 60 * 24 * boardData['parseDay'] 
-	rangeDay = curTime - 60 * 60 * 24 * boardData['rankDay']
+	endTime = curTime - 60 * 60 * boardData['parseHour'] 
+	rangeDay = curTime - 60 * 60 * boardData['rankHour']
 	print datetime.datetime.fromtimestamp(endTime).strftime('%Y-%m-%d %H:%M:%S')
 	print '=================='
 
     #dataCollect();
 	#board = 'beauty'#'Gossiping'
-	formProcess2("http://www.ptt.cc/bbs/" + boardData['name'] + "/index.html")#HatePolitics
+	listLink = "http://www.ptt.cc/bbs/" + boardData['name'] + "/index.html"
+	while flagStop is False:
+		formProcess2(listLink)#HatePolitics
 
 	#print
 	for key in linkData.keys():
@@ -381,8 +398,8 @@ if __name__ == "__main__":
 	br = mechanize.Browser()
 	br.set_handle_robots(False) # ignore robots
 
-	processBoard = [{'name': 'Gossiping'   , 'parseDay':1, 'rankDay':3 },  \
-					{'name': 'beauty'      , 'parseDay':3, 'rankDay':3}]
+	processBoard = [{'name': 'Gossiping'   , 'parseHour':24, 'rankHour':72 },  \
+					{'name': 'beauty'      , 'parseHour':72, 'rankHour':72}]
 
 	for boardData in processBoard:
 		print '********* process' + boardData['name'] + '*********'
