@@ -119,6 +119,7 @@ def contentGet(id, contentLink):
 		pushNormalCount = 0
 		print 'contentGet start parse push'
 		for pushdiv in soup.findAll("div", {"class":"push"}):
+			print 'contentGet parse push'
 			#print pushdiv
 			#push
 			pushTag = pushdiv.find("span", {"class":"hl push-tag"})
@@ -141,6 +142,7 @@ def contentGet(id, contentLink):
 		links = []		
 		print 'contentGet start parse link'	
 		for link in soup.findAll('a', href=True):
+			print 'contentGet parse link'
 			m = re.search('http://.+', link['href'])
 			if not m is None:
 
@@ -187,6 +189,7 @@ def contentGet(id, contentLink):
 		#<span class="article-meta-value">Tue Apr 15 00:07:21 2014</span>
 		print 'contentGet start parse time'
 		for metaDiv in soup.findAll('div',  {"class":"article-metaline"}):
+			print 'contentGet parse time'
 			metaDivTag = metaDiv.find('span',  {"class":"article-meta-tag"})
 			metaDivValue = metaDiv.find('span',  {"class":"article-meta-value"})
 			if metaDivTag.string.encode('utf8').find('時間') != -1:
