@@ -398,8 +398,8 @@ if __name__ == "__main__":
 	br = mechanize.Browser()
 	br.set_handle_robots(False) # ignore robots
 
-	processBoard = [{'name': 'Gossiping'   , 'parseHour':3, 'rankHour':72 },  \
-					{'name': 'beauty'      , 'parseHour':3, 'rankHour':72}]
+	processBoard = [{'name': 'Gossiping'   , 'parseHour':24, 'rankHour':72 },  \
+					{'name': 'beauty'      , 'parseHour':72, 'rankHour':72}]
 
 	for boardData in processBoard:
 		print '********* process' + boardData['name'] + '*********'
