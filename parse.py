@@ -15,6 +15,7 @@ def formProcess2(url):
 	global br
 	global groupData
 	global contextData2
+	global listLink
 	print 'process list:' + url
 
 	response = None
@@ -33,7 +34,7 @@ def formProcess2(url):
 		response = br.submit(name='yes', label='yes')
 
 	nextIdx = 0;
-	nextLink = None
+	#nextLink = None
 
 
 	soup = BeautifulSoup(response);
@@ -42,7 +43,7 @@ def formProcess2(url):
 	pageLinkDiv = soup.find("div", {"class":"btn-group pull-right"})
 	for pageLink in pageLinkDiv.findAll('a', href=True):
 		if pageLink.string.encode('utf8').find('上頁') != -1:
-			nextLink = 'http://www.ptt.cc' + pageLink['href']
+			listLink = 'http://www.ptt.cc' + pageLink['href']
 
 	#文章列表
 	for recordDiv in reversed(soup.findAll("div", {"class":"r-ent"})):
@@ -69,7 +70,7 @@ def formProcess2(url):
 
 			object['link'] = 'http://www.ptt.cc' + titleLink['href']
 		
-	
+			time.sleep(0.2)
 			contentGet(id, 'http://www.ptt.cc' + titleLink['href'])
 	
 			keyString = '';
@@ -93,8 +94,8 @@ def formProcess2(url):
 
 	print '----====----==----'
 	print flagStop
-	if flagStop != True:
-		formProcess2(nextLink)
+	#if flagStop != True:
+	#	formProcess2(nextLink)
 
 
 def contentGet(id, contentLink):
@@ -217,6 +218,7 @@ def boardProcess(boardData):
 	global curTime
 	global endTime
 	global flagStop
+	global listLink
 
 	linkData = {}
 	contextData = {}
@@ -227,14 +229,16 @@ def boardProcess(boardData):
 	print '=== start time ==='
 	print curTime
 	print datetime.datetime.fromtimestamp(curTime).strftime('%Y-%m-%d %H:%M:%S')
-	endTime = curTime - 60 * 60 * 24 * boardData['parseDay'] 
-	rangeDay = curTime - 60 * 60 * 24 * boardData['rankDay']
+	endTime = curTime - 60 * 60 * boardData['parseHour'] 
+	rangeDay = curTime - 60 * 60 * boardData['rankHour']
 	print datetime.datetime.fromtimestamp(endTime).strftime('%Y-%m-%d %H:%M:%S')
 	print '=================='
 
     #dataCollect();
 	#board = 'beauty'#'Gossiping'
-	formProcess2("http://www.ptt.cc/bbs/" + boardData['name'] + "/index.html")#HatePolitics
+	listLink = "http://www.ptt.cc/bbs/" + boardData['name'] + "/index.html"
+	while flagStop is False:
+		formProcess2(listLink)#HatePolitics
 
 	#print
 	for key in linkData.keys():
@@ -381,8 +385,8 @@ if __name__ == "__main__":
 	br = mechanize.Browser()
 	br.set_handle_robots(False) # ignore robots
 
-	processBoard = [{'name': 'Gossiping'   , 'parseDay':1, 'rankDay':3 },  \
-					{'name': 'beauty'      , 'parseDay':3, 'rankDay':3}]
+	processBoard = [{'name': 'Gossiping'   , 'parseHour':24, 'rankHour':72 },  \
+					{'name': 'beauty'      , 'parseHour':72, 'rankHour':72}]
 
 	for boardData in processBoard:
 		print '********* process' + boardData['name'] + '*********'
