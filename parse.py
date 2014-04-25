@@ -37,7 +37,7 @@ def formProcess2(url):
 	#nextLink = None
 
 
-	soup = BeautifulSoup(response);
+	soup = BeautifulSoup(response, features="html5lib");
 
 	#下一頁面連結取得
 	pageLinkDiv = soup.find("div", {"class":"btn-group pull-right"})
@@ -113,7 +113,7 @@ def contentGet(id, contentLink):
 		response2 = None
 
 	if not response2 is None:
-		soup = BeautifulSoup(response2)
+		soup = BeautifulSoup(response2, features="html5lib")
 		pushGoodCount = 0
 		pushBadCount = 0
 		pushNormalCount = 0
