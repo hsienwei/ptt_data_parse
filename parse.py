@@ -10,6 +10,7 @@ from dateutil import parser
 import time
 import datetime
 import pymongo
+import copy
 
 def formProcess2(url):
 	global br
@@ -36,8 +37,11 @@ def formProcess2(url):
 	nextIdx = 0;
 	#nextLink = None
 
-
-	soup = BeautifulSoup(response, features='lxml');
+	only_div_btngroup = SoupStrainer("div", {"class":"btn-group pull-right"})
+	only_div_r_ent = SoupStrainer("div", {"class":"r-ent"})
+	#response2 = copy.copy(response)
+	soup = BeautifulSoup(copy.copy(response), features='lxml', parse_only=only_div_btngroup);
+	soup2 = BeautifulSoup(copy.copy(response), features='lxml', parse_only=only_div_r_ent);
 
 	#下一頁面連結取得
 	pageLinkDiv = soup.find("div", {"class":"btn-group pull-right"})
@@ -46,7 +50,8 @@ def formProcess2(url):
 			listLink = 'http://www.ptt.cc' + pageLink['href']
 
 	#文章列表
-	for recordDiv in reversed(soup.findAll("div", {"class":"r-ent"})):
+
+	for recordDiv in reversed(soup2.findAll("div", {"class":"r-ent"})):
 		titleDiv = recordDiv.find("div", {"class":"title"})
 		metaDiv = recordDiv.find("div", {"class":"meta"})
 
@@ -107,13 +112,14 @@ def contentGet(id, contentLink):
 	global flagStop
 	print contentLink
 	try:
-		response2 = br.open(contentLink)
-		print 'contentGet:' + response2.geturl()
+		response = br.open(contentLink)
+		print 'contentGet:' + response.geturl()
 	except:	
-		response2 = None
+		response = None
 
-	if not response2 is None:
-		soup = BeautifulSoup(response2, features='lxml')
+	if not response is None:
+		only_div_push = SoupStrainer("div", {"class":"push"})
+		soup = BeautifulSoup(copy.copy(response), features='lxml', parse_only=only_div_push)
 		pushGoodCount = 0
 		pushBadCount = 0
 		pushNormalCount = 0
@@ -140,6 +146,8 @@ def contentGet(id, contentLink):
 		contextData[contentLink] = { 'push': pushData}
 					
 		links = []		
+		only_link = SoupStrainer('a', href=True)
+		soup = BeautifulSoup(copy.copy(response), features='lxml', parse_only=only_link)
 		print 'contentGet start parse link'	
 		for link in soup.findAll('a', href=True):
 			print 'contentGet parse link'
@@ -187,6 +195,8 @@ def contentGet(id, contentLink):
 		
 		#時間
 		#<span class="article-meta-value">Tue Apr 15 00:07:21 2014</span>
+		only_div_acticlemeta = SoupStrainer('div',  {"class":"article-metaline"})
+		soup = BeautifulSoup(copy.copy(response), features='lxml', parse_only=only_div_acticlemeta)
 		print 'contentGet start parse time'
 		for metaDiv in soup.findAll('div',  {"class":"article-metaline"}):
 			print 'contentGet parse time'
@@ -388,8 +398,8 @@ if __name__ == "__main__":
 	br = mechanize.Browser()
 	br.set_handle_robots(False) # ignore robots
 
-	processBoard = [{'name': 'Gossiping'   , 'parseHour':24, 'rankHour':72 },  \
-					{'name': 'beauty'      , 'parseHour':72, 'rankHour':72}]
+	processBoard = [{'name': 'Gossiping'   , 'parseHour':3, 'rankHour':72 },  \
+					{'name': 'beauty'      , 'parseHour':3, 'rankHour':72}]
 
 	for boardData in processBoard:
 		print '********* process' + boardData['name'] + '*********'
