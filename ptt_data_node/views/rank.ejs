@@ -1,51 +1,15 @@
 
-<%  function singleHtml(data) {
-    for(var i=0; i < data.length; ++i) {%>
-    <p><a href='<%= data[i]['link'] %>'><%= data[i]['title'] %></a>  </p>
-    <p>推 = <%=data[i]['push']['g']%>, 噓 = <%=data[i]['push']['b']%>, 總和 = <%=data[i]['push']['all']%></p>
-  <%}
-} %>
 
+<div>
+  <div>
+    <div><a href='./<%=board_id%>/single/g'>單則(推文)</a></div>
+    <div><a href='./<%=board_id%>/single/b'>單則(噓文)</a></div>
+    <div><a href='./<%=board_id%>/single/all'>單則(總計)</a></div>
+  </div>
+  <div>
+    <div><a href='./<%=board_id%>/group/g'>群組(推文)</a></div>
+    <div><a href='./<%=board_id%>/group/b'>群組(噓文)</a></div>
+    <div><a href='./<%=board_id%>/group/all'>群組(總計)</a></div>
+  </div>
 
-<%  function groupHtml(data) {
-     for(var i=0; i < data.length; ++i) { %>
-      <p><%= data[i]['key'] %>  </p>
-      <p>推 = <%=data[i]['push']['g']%>, 噓 = <%=data[i]['push']['b']%>, 總和 = <%=data[i]['push']['all']%></p>
-      <% for(var j=0; j < data[i]['groupListData'].length; ++j) { %>
-      <blockquote><p><a href='<%= data[i]['groupListData'][j]['link'] %>'><%=data[i]['groupListData'][j]['title'] %></a>  推 = <%=data[i]['groupListData'][j]['push']['g']%>, 噓 = <%=data[i]['groupListData'][j]['push']['b']%>, 總和 = <%=data[i]['groupListData'][j]['push']['all']%></p></blockquote>
-      <% }; %>
-    <% }; 
-} %>
-
-
-<h1>單則排行  綜合</h1>
-<div>
-<% singleHtml(rank['t']) %>
-
-</div>
----------------------------------------------------------------------------------------------------------------------------------
-<h1>單則排行  推文</h1>
-<div>
-<% singleHtml(rank['g']) %>
-</div>
----------------------------------------------------------------------------------------------------------------------------------
-<h1>單則排行  噓文</h1>
-<div>
-<% singleHtml(rank['b']) %>
-</div>
----------------------------------------------------------------------------------------------------------------------------------
-<h1>討論群排行  綜合</h1>
-<div>
-<% groupHtml(rank['gt']) %>
-
-</div>
----------------------------------------------------------------------------------------------------------------------------------
-<h1>討論群排行  推文</h1>
-<div>
-<% groupHtml(rank['gg']) %>
-</div>
----------------------------------------------------------------------------------------------------------------------------------
-<h1>討論群排行  噓文</h1>
-<div>
-<% groupHtml(rank['gb']) %>
 </div>

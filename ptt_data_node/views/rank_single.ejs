@@ -1,0 +1,14 @@
+
+<%  function singleHtml(data) {
+    for(var i=0; i < data.length; ++i) {%>
+    <p><%=i+1%> <a href='<%= data[i]['link'] %>'><%= data[i]['title'] %></a>  </p>
+    <p>推 = <%=data[i]['push']['g']%>, 噓 = <%=data[i]['push']['b']%>, 總和 = <%=data[i]['push']['all']%></p>
+  <%}
+} %>
+
+
+<h1>單則排行</h1>
+<div>
+<% singleHtml(rank) %>
+
+</div>
