@@ -11,12 +11,14 @@ import time
 import datetime
 import pymongo
 import copy
+import platform
 
 def formProcess2(url):
 	global br
 	global groupData
 	global contextData2
 	global listLink
+	global features
 	print 'process list:' + url
 
 	response = None
@@ -40,8 +42,8 @@ def formProcess2(url):
 	only_div_btngroup = SoupStrainer("div", {"class":"btn-group pull-right"})
 	only_div_r_ent = SoupStrainer("div", {"class":"r-ent"})
 	#response2 = copy.copy(response)
-	soup = BeautifulSoup(copy.copy(response), features='html5lib', parse_only=only_div_btngroup);
-	soup2 = BeautifulSoup(copy.copy(response), features='html5lib', parse_only=only_div_r_ent);
+	soup = BeautifulSoup(copy.copy(response), features=features, parse_only=only_div_btngroup);
+	soup2 = BeautifulSoup(copy.copy(response), features=features, parse_only=only_div_r_ent);
 
 	#下一頁面連結取得
 	pageLinkDiv = soup.find("div", {"class":"btn-group pull-right"})
@@ -110,6 +112,7 @@ def contentGet(id, contentLink):
 	global contextData2
 	global endTime
 	global flagStop
+	global features
 	print contentLink
 	try:
 		response = br.open(contentLink)
@@ -119,7 +122,7 @@ def contentGet(id, contentLink):
 
 	if not response is None:
 		only_div_push = SoupStrainer("div", {"class":"push"})
-		soup = BeautifulSoup(copy.copy(response), features='html5lib', parse_only=only_div_push)
+		soup = BeautifulSoup(copy.copy(response), features=features, parse_only=only_div_push)
 		pushGoodCount = 0
 		pushBadCount = 0
 		pushNormalCount = 0
@@ -147,7 +150,7 @@ def contentGet(id, contentLink):
 					
 		links = []		
 		only_link = SoupStrainer('a', href=True)
-		soup = BeautifulSoup(copy.copy(response), features='html5lib', parse_only=only_link)
+		soup = BeautifulSoup(copy.copy(response), features=features, parse_only=only_link)
 		print 'contentGet start parse link'	
 		for link in soup.findAll('a', href=True):
 			print 'contentGet parse link'
@@ -196,7 +199,7 @@ def contentGet(id, contentLink):
 		#時間
 		#<span class="article-meta-value">Tue Apr 15 00:07:21 2014</span>
 		only_div_acticlemeta = SoupStrainer('div',  {"class":"article-metaline"})
-		soup = BeautifulSoup(copy.copy(response), features='html5lib', parse_only=only_div_acticlemeta)
+		soup = BeautifulSoup(copy.copy(response), features=features, parse_only=only_div_acticlemeta)
 		print 'contentGet start parse time'
 		for metaDiv in soup.findAll('div',  {"class":"article-metaline"}):
 			print 'contentGet parse time'
@@ -393,6 +396,15 @@ def boardProcess(boardData):
 if __name__ == "__main__":
 	
 	global br
+
+	global features
+
+	if platform.system() == 'Windows':
+		features = 'html5lib'
+	else:
+		features = 'lxml'
+
+	print 'use features: ' + features
 	
 	#parse
 	br = mechanize.Browser()
