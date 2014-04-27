@@ -19,6 +19,8 @@ def formProcess2(url):
 	global contextData2
 	global listLink
 	global features
+	global curTime
+	
 	print 'process list:' + url
 
 	response = None
@@ -67,37 +69,58 @@ def formProcess2(url):
 			m = re.search('\/bbs\/([A-Za-z0-9]+)\/([A-Za-z0-9\.]+)\.html', titleLink['href'])
 			print m.groups()[0]
 			id = m.groups()[1]
+			contentLink = 'http://www.ptt.cc' + titleLink['href']
 			
-			if id in contextData2:
-				object = contextData2[id]
-			else:
-				object = {}
-				object['id'] = id
-				contextData2[id] = object
 
-			object['link'] = 'http://www.ptt.cc' + titleLink['href']
+			content_obj = contentGet(id, 'http://www.ptt.cc' + titleLink['href'])
+
+			if not content_obj is None:
+				
+				if id in contextData2:
+					object = contextData2[id]
+				else:
+					object = {}
+					object['id'] = id
+					contextData2[id] = object
+				
+				#內文title抓不到 用列表的
+				if 'title' in content_obj:
+					object['title'] = content_obj['title']
+				else:
+					object['title'] = titleLink.string.encode('utf8')
+				#內文時間抓不到 用現在時間頂替	
+				if 'time' in content_obj:	
+					object['time'] = content_obj['time']
+				else:
+					object['time'] = curTime
+				#內文推文抓不到  用預設為0
+				if 'push' in content_obj:	
+					object['push'] = content_obj['push']
+				else:
+					object['push'] = { 'g': 0, 'b': 0, 'all': 0 }
+				object['link'] = contentLink
 		
-			time.sleep(0.2)
-			contentGet(id, 'http://www.ptt.cc' + titleLink['href'])
+				time.sleep(0.2)
+			
 	
-			keyString = '';
-			if titleLink.string.encode('utf8').find('Re: ') != -1:  #回覆
-				keyString = titleLink.string.encode('utf8')[4:];
-			else:
-				keyString = titleLink.string.encode('utf8');
+				keyString = '';
+				if titleLink.string.encode('utf8').find('Re: ') != -1:  #回覆
+					keyString = titleLink.string.encode('utf8')[4:];
+				else:
+					keyString = titleLink.string.encode('utf8');
 
-			if keyString in groupData.keys():
-				groupData[keyString]['groupList'].append(id)
-			else:
-				groupData[keyString] = {'key':keyString, 'groupList':[id]}
+				if keyString in groupData.keys():
+					groupData[keyString]['groupList'].append(id)
+				else:
+					groupData[keyString] = {'key':keyString, 'groupList':[id]}
 
-		dateDiv = metaDiv.find('div', {"class":"date"})	
-		authorDiv = metaDiv.find('div', {"class":"author"})
-		print dateDiv.string
-		print authorDiv.string	
+				dateDiv = metaDiv.find('div', {"class":"date"})	
+				authorDiv = metaDiv.find('div', {"class":"author"})
+				print dateDiv.string
+				print authorDiv.string	
 
-		if flagStop:
-			break
+				#if flagStop:
+				#	break
 
 	print '----====----==----'
 	print flagStop
@@ -119,6 +142,8 @@ def contentGet(id, contentLink):
 		print 'contentGet:' + response.geturl()
 	except:	
 		response = None
+
+	content_obj = None
 
 	if not response is None:
 		only_div_push = SoupStrainer("div", {"class":"push"})
@@ -144,8 +169,10 @@ def contentGet(id, contentLink):
 					pushNormalCount = pushNormalCount + 1	
 		print 'contentGet end parse push'
 		pushData = { 'all':pushGoodCount + pushBadCount + pushNormalCount,  'g' : pushGoodCount, 'b': pushBadCount, 'n':pushNormalCount}
-		object = contextData2[id]
-		object['push'] = pushData
+		#object = contextData2[id]
+		#object['push'] = pushData
+		content_obj = {}
+		content_obj['push'] = pushData
 		contextData[contentLink] = { 'push': pushData}
 					
 		links = []		
@@ -164,27 +191,6 @@ def contentGet(id, contentLink):
 
 				print '--' +  link['href'].encode('utf8')
 
-				contenturl = ''
-				'''try:
-					if link['href'].find('ppt.cc') != -1:
-						response3 = br.open(link['href'])
-						print 'ppt.cc : ' +  response3.geturl()
-						contenturl = response3.geturl()
-					elif link['href'].find('goo.gl') != -1: 
-						response3 = br.open(link['href'])
-						print 'goo.gl : ' +  response3.geturl()
-						contenturl = response3.geturl()	
-					elif link['href'].find('tinyurl.com') != -1: 
-						response3 = br.open(link['href'])
-						print 'tinyurl.com : ' +  response3.geturl()
-						contenturl = response3.geturl()	
-					elif link['href'].find('bit.ly') != -1: 
-						response3 = br.open(link['href'])
-						print 'bit.ly : ' +  response3.geturl()
-						contenturl = response3.geturl()		
-					else:
-						contenturl = link['href']
-				except:		'''
 				contenturl = link['href']
 
 				links.append(contenturl)
@@ -212,7 +218,8 @@ def contentGet(id, contentLink):
 				#contextTime = time.mktime(time.strptime(object['time'], '%Y-%m-%d %H:%M:%S'))
 				parsedTimeStr = parser.parse(metaDivValue.string).strftime("%Y-%m-%d %H:%M:%S")
 				contextTime = time.mktime(time.strptime(parsedTimeStr, '%Y-%m-%d %H:%M:%S'))
-				object['time'] = contextTime
+				#object['time'] = contextTime
+				content_obj['time'] = contextTime
 
 				print contextTime
 				print endTime
@@ -221,8 +228,11 @@ def contentGet(id, contentLink):
 					flagStop = True
 
 			if metaDivTag.string.encode('utf8').find('標題') != -1:
-				object['title'] = metaDivValue.string
-		print 'contentGet stop parse time'		
+				#object['title'] = metaDivValue.string
+				content_obj['title'] = metaDivValue.string
+		print 'contentGet stop parse time'	
+		
+	return content_obj		
 
 
 def boardProcess(boardData):
@@ -279,12 +289,15 @@ def boardProcess(boardData):
 		print key 
 		push = {"all": 0, "b": 0, "g": 0, "n": 0}
 		for data in groupData[key]['groupList']:
-			print '--' + data
-			print contextData2[data]['push']
-			push['b'] = push['b'] + contextData2[data]['push']['b']
-			push['g'] = push['g'] + contextData2[data]['push']['g']
-			push['n'] = push['n'] + contextData2[data]['push']['n']
-			push['all'] = push['all'] + contextData2[data]['push']['all']
+			if not contextData2[data] is None:
+				print '--' + data
+				print contextData2[data]
+				if not contextData2[data]['push'] is None:
+					print contextData2[data]['push']
+					push['b'] = push['b'] + contextData2[data]['push']['b']
+					push['g'] = push['g'] + contextData2[data]['push']['g']
+					push['n'] = push['n'] + contextData2[data]['push']['n']
+					push['all'] = push['all'] + contextData2[data]['push']['all']
 		groupData[key]['push'] = push
 
 	#save to file
@@ -294,8 +307,8 @@ def boardProcess(boardData):
 		
 	
 	#save to db
-	conn=pymongo.Connection('54.251.147.205',27017)
-	#conn=pymongo.Connection('127.0.0.1',27017)
+	#conn=pymongo.Connection('54.251.147.205',27017)
+	conn=pymongo.Connection('127.0.0.1',27017)
 	db = conn[boardData['name']]#conn['Gossiping']
 
 	#單一文章
@@ -390,8 +403,45 @@ def boardProcess(boardData):
 	jsonStr = json.dumps(rankdata, indent=4)
 	with open("rankdata.json", "w") as f:
 		f.write(jsonStr) 	
-
 	db.rank.insert(rankdata)
+
+	#link get
+	'''try:
+					if link['href'].find('ppt.cc') != -1:
+						response3 = br.open(link['href'])
+						print 'ppt.cc : ' +  response3.geturl()
+						contenturl = response3.geturl()
+					elif link['href'].find('goo.gl') != -1: 
+						response3 = br.open(link['href'])
+						print 'goo.gl : ' +  response3.geturl()
+						contenturl = response3.geturl()	
+					elif link['href'].find('tinyurl.com') != -1: 
+						response3 = br.open(link['href'])
+						print 'tinyurl.com : ' +  response3.geturl()
+						contenturl = response3.geturl()	
+					elif link['href'].find('bit.ly') != -1: 
+						response3 = br.open(link['href'])
+						print 'bit.ly : ' +  response3.geturl()
+						contenturl = response3.geturl()		
+					else:
+						contenturl = link['href']
+				except:		'''
+	'''			
+	for key in linkData.keys():
+		print '=========='
+		link = str(key.encode('utf8'))
+		print '1 ' + link
+
+		try:
+			response3 = br.open(link)
+			contenturl = response3.geturl()
+			contenttitle = br.title()
+			print '2 ' + contenturl	
+			print '3 ' + contenttitle		
+		except:	
+			print 'error'
+	'''		
+
 
 if __name__ == "__main__":
 	
