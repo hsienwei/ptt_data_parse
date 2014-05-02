@@ -247,6 +247,7 @@ def boardProcess(boardData):
 	global endTime
 	global flagStop
 	global listLink
+	global db_address
 
 	linkData = {}
 	contextData = {}
@@ -310,7 +311,7 @@ def boardProcess(boardData):
 	
 	#save to db
 	#conn=pymongo.Connection('54.251.147.205',27017)
-	conn=pymongo.Connection('127.0.0.1',27017)
+	conn=pymongo.Connection(db_address,27017)
 	db = conn[boardData['name']]#conn['Gossiping']
 
 	#單一文章
@@ -445,16 +446,18 @@ def boardProcess(boardData):
 	'''		
 
 
-def parseKeyword():
+def parseKeyword(board_data):
 	global br
+	global db_address
 
-	conn=pymongo.Connection('127.0.0.1',27017)
-	db = conn['Gossiping']#conn['Gossiping']
+	conn=pymongo.Connection(db_address,27017)
+	db = conn[board_data['name']]
 
 	rank_data = list(db.single.find({}, { '_id': 0}) \
 						    .sort([('push.all', pymongo.DESCENDING)]) \
 							.limit(50))	
 	keywords = {}
+	links_data = []
 
 	for data in rank_data:
 		
@@ -478,6 +481,7 @@ def parseKeyword():
 		only_link = SoupStrainer('a', href=True)
 		soup = BeautifulSoup(copy.copy(response), features=features, parse_only=only_link)
 		print 'contentGet start parse link'	
+		idx = 0
 		for link in soup.findAll('a', href=True):
 			m = re.search('http://.+', link['href'])
 			if not m is None:
@@ -498,12 +502,23 @@ def parseKeyword():
 					response_link = None		
 
 				if not response_link is None:
+					link_data = {}
 					print response_link.geturl()
+					link_data['origin'] = contenturl
+					link_data['real'] = response_link.geturl()
+					title = None
 					if br.viewing_html():
 						try:
-							print '-real-:' + br.title()
+							title =  br.title().encode('utf8')
 						except:	
-							print 'no title'	
+							title = 'no title'	
+					else:		
+						title = 'no title'	
+					link_data['title'] = title	
+					link_data['idx'] = idx	
+
+					links_data.append(link_data)
+				idx = idx + 1
 
 		#取keyword
 		only_div_acticlemeta = SoupStrainer('div',  {"class":"article-metaline"})
@@ -543,7 +558,12 @@ def parseKeyword():
 			db.keyword.insert({'keyword': keyword, 'count': count})
 		else:
 			findData['count'] = count
-			db.keyword.save(findDoc)
+			db.keyword.save(findData)
+
+	db.links.drop()
+	for link_data in links_data:
+		db.links.insert(link_data)
+		
 
 	jsonStr = json.dumps(sort_dict, indent=4)
 	with open("keyword.json", "w") as f:
@@ -552,25 +572,25 @@ def parseKeyword():
 if __name__ == "__main__":
 	
 	global br
-
 	global features
-
 	if platform.system() == 'Windows':
 		features = 'html5lib'
 	else:
 		features = 'lxml'
-
 	print 'use features: ' + features
+
+	global db_address
+	db_address = '127.0.0.1' #'54.251.147.205'
 	
 	#parse
 	br = mechanize.Browser()
 	br.set_handle_robots(False) # ignore robots
 	br.set_handle_refresh(False)
-	#parseKeyword()
 
 
-	processBoard = [{'name': 'Gossiping'   , 'parseHour':1, 'rankHour':72 },  \
-					{'name': 'beauty'      , 'parseHour':1, 'rankHour':72},  \
+
+	processBoard = [{'name': 'Gossiping'   , 'parseHour':24, 'rankHour':72 },  \
+					{'name': 'beauty'      , 'parseHour':72, 'rankHour':72},  \
 					{'name': 'joke'      , 'parseHour':72, 'rankHour':72},  \
 					{'name': 'StupidClown'      , 'parseHour':72, 'rankHour':72},  \
 					{'name': 'sex'      , 'parseHour':72, 'rankHour':72}]
@@ -578,6 +598,7 @@ if __name__ == "__main__":
 	for boardData in processBoard:
 		print '********* process' + boardData['name'] + '*********'
 		boardProcess(boardData)
+		#parseKeyword(boardData)
 
 		
 
