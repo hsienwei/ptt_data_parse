@@ -12,6 +12,8 @@ import datetime
 import pymongo
 import copy
 import platform
+import jieba
+import jieba.analyse
 
 def formProcess2(url):
 	global br
@@ -443,6 +445,110 @@ def boardProcess(boardData):
 	'''		
 
 
+def parseKeyword():
+	global br
+
+	conn=pymongo.Connection('127.0.0.1',27017)
+	db = conn['Gossiping']#conn['Gossiping']
+
+	rank_data = list(db.single.find({}, { '_id': 0}) \
+						    .sort([('push.all', pymongo.DESCENDING)]) \
+							.limit(50))	
+	keywords = {}
+
+	for data in rank_data:
+		
+		response = None
+		try:
+			#response = br.open('http://www.ptt.cc/bbs/Gossiping/M.1398786724.A.D29.html')
+			response = br.open(data['link'])
+			print data['link']
+		
+			if response.geturl().find('over18') != -1:
+				print 'over 18 page process'
+				br.select_form(nr=0)
+				response = br.submit(name='yes', label='yes')
+		except:	
+			response = None	
+			
+		if response is None:	
+			continue 
+
+		#取連結
+		only_link = SoupStrainer('a', href=True)
+		soup = BeautifulSoup(copy.copy(response), features=features, parse_only=only_link)
+		print 'contentGet start parse link'	
+		for link in soup.findAll('a', href=True):
+			m = re.search('http://.+', link['href'])
+			if not m is None:
+
+				if link['href'] == data['link']:
+					continue
+				if link['href'].find('http://www.ptt.cc/') != -1:
+					continue	
+
+				print '-origin-:' +  link['href'].encode('utf8')
+
+				contenturl = link['href']
+
+				response_link = None
+				try:
+					response_link = br.open(contenturl, timeout=30.0)
+				except:	
+					response_link = None		
+
+				if not response_link is None:
+					print response_link.geturl()
+					if br.viewing_html():
+						try:
+							print '-real-:' + br.title()
+						except:	
+							print 'no title'	
+
+		#取keyword
+		only_div_acticlemeta = SoupStrainer('div',  {"class":"article-metaline"})
+		soup = BeautifulSoup(copy.copy(response), features=features, parse_only=only_div_acticlemeta)
+		div = soup.find('div',  {"class":"bbs-screen bbs-content"})
+
+		titles = soup.findAll('div',  {"class":"article-metaline"})
+		[title.extract() for title in titles]
+		titles2 = soup.findAll('div',  {"class":"article-metaline-right"})
+		[title.extract() for title in titles2]
+		pushs = soup.findAll('div',  {"class":"push"})
+		[push.extract() for push in pushs]
+		spans = soup.findAll('span',  {"class":"f2"})
+		[span.extract() for span in spans]
+
+		contenttext = ''
+		for str in div.strings:
+			contenttext += str
+		
+		tags = jieba.analyse.extract_tags( contenttext, topK=10)
+		for tag in tags:
+			if tag in keywords.keys():
+				keywords[tag] = keywords[tag] + 1
+			else:
+				keywords[tag] = 1	
+
+	sort_dict= sorted(keywords.iteritems(), key=lambda d:d[1], reverse = True)
+	
+	#for key in sort_dict:
+	#	print key[0]
+
+	for keyword_data in sort_dict:
+		keyword = keyword_data[0].encode('utf8')
+		count = keyword_data[1]
+		findData = db.keyword.find_one({'keyword': keyword})
+		if findData is None:
+			db.keyword.insert({'keyword': keyword, 'count': count})
+		else:
+			findData['count'] = count
+			db.keyword.save(findDoc)
+
+	jsonStr = json.dumps(sort_dict, indent=4)
+	with open("keyword.json", "w") as f:
+		f.write(jsonStr) 
+
 if __name__ == "__main__":
 	
 	global br
@@ -459,13 +565,21 @@ if __name__ == "__main__":
 	#parse
 	br = mechanize.Browser()
 	br.set_handle_robots(False) # ignore robots
+	br.set_handle_refresh(False)
+	#parseKeyword()
 
-	processBoard = [{'name': 'Gossiping'   , 'parseHour':24, 'rankHour':72 },  \
-					{'name': 'beauty'      , 'parseHour':72, 'rankHour':72}]
+
+	processBoard = [{'name': 'Gossiping'   , 'parseHour':1, 'rankHour':72 },  \
+					{'name': 'beauty'      , 'parseHour':1, 'rankHour':72},  \
+					{'name': 'joke'      , 'parseHour':72, 'rankHour':72},  \
+					{'name': 'StupidClown'      , 'parseHour':72, 'rankHour':72},  \
+					{'name': 'sex'      , 'parseHour':72, 'rankHour':72}]
 
 	for boardData in processBoard:
 		print '********* process' + boardData['name'] + '*********'
 		boardProcess(boardData)
+
+		
 
 					  	
 		
