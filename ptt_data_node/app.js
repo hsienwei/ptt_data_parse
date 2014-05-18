@@ -40,6 +40,8 @@ app.get('/rank/:id/group', routes.rank_group);
 app.get('/rank/:id/group/:sort_type', routes.rank_group);
 app.get('/rank/:id/group/:sort_type/:num', routes.rank_group_num);
 app.get('/grouplist/:id/:title', routes.grouplist);
+
+app.get('/links/:id', routes.links);
 //app.get('/users', user.list);
 
 http.createServer(app).listen(app.get('port'), function(){

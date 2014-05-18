@@ -101,7 +101,12 @@ def formProcess2(url):
 				else:
 					object['push'] = { 'g': 0, 'b': 0, 'all': 0 }
 				object['link'] = contentLink
-		
+
+				if 'extra_push_point' in content_obj:	
+					object['extra_push_point'] = content_obj['extra_push_point']
+				else:
+					object['extra_push_point'] = 0
+
 				time.sleep(0.2)
 			
 	
@@ -138,6 +143,7 @@ def contentGet(id, contentLink):
 	global endTime
 	global flagStop
 	global features
+	global sixHourBeforeTime
 	print contentLink
 	try:
 		response = br.open(contentLink)
@@ -154,10 +160,14 @@ def contentGet(id, contentLink):
 		pushBadCount = 0
 		pushNormalCount = 0
 		print 'contentGet start parse push'
+		pushTmpMonth = 0
+		pushTmpYearOffset = 0
+		extraPushPoint = 0
 		for pushdiv in soup.findAll("div", {"class":"push"}):
 			print 'contentGet parse push'
 			#print pushdiv
 			#push
+			#推噓判定
 			pushTag = pushdiv.find("span", {"class":"hl push-tag"})
 			if pushTag is None:
 				pushTag = pushdiv.find("span", {"class":"f1 hl push-tag"})
@@ -169,12 +179,35 @@ def contentGet(id, contentLink):
 					pushBadCount = pushBadCount + 1	
 				else:
 					pushNormalCount = pushNormalCount + 1	
+			#推文時間
+			pushTime = pushdiv.find("span", {"class":"push-ipdatetime"})
+			parsedTime = parser.parse(pushTime.string)
+			#if pushTmpYearOffset > 0:
+			#	parsedTime = parsedTime.replace(year=parsedTime.year+pushTmpYearOffset)
+			parsedTimeStr = parsedTime.strftime("%Y-%m-%d %H:%M:%S")
+			parsedTimeStamp = time.mktime(time.strptime(parsedTimeStr, '%Y-%m-%d %H:%M:%S'))
+			if parsedTimeStamp > sixHourBeforeTime:
+				extraPushPoint = extraPushPoint + 1;
+			print type(parsedTime)
+			print type(parsedTimeStr)
+			print parsedTimeStr
+			if pushTmpMonth > parsedTime.month:
+				pushTmpYearOffset = pushTmpYearOffset + 1
+			pushTmpMonth = parsedTime.month
+		print 'pushAllCount ' + str(pushGoodCount + pushBadCount + pushNormalCount)
+		print 'extraPushPoint ' + str(extraPushPoint)
+
 		print 'contentGet end parse push'
 		pushData = { 'all':pushGoodCount + pushBadCount + pushNormalCount,  'g' : pushGoodCount, 'b': pushBadCount, 'n':pushNormalCount}
+		pushExtraData = {   'all':pushData['all'] + extraPushPoint,  
+							'g' : pushData['g'] + extraPushPoint, 
+							'b': pushData['b'] + extraPushPoint, 
+							'n':pushData['n'] + extraPushPoint  }
 		#object = contextData2[id]
 		#object['push'] = pushData
 		content_obj = {}
 		content_obj['push'] = pushData
+		content_obj['extra_push_point'] = pushExtraData
 		contextData[contentLink] = { 'push': pushData}
 					
 		links = []		
@@ -248,6 +281,7 @@ def boardProcess(boardData):
 	global flagStop
 	global listLink
 	global db_address
+	global sixHourBeforeTime
 
 	linkData = {}
 	contextData = {}
@@ -260,6 +294,7 @@ def boardProcess(boardData):
 	print datetime.datetime.fromtimestamp(curTime).strftime('%Y-%m-%d %H:%M:%S')
 	endTime = curTime - 60 * 60 * boardData['parseHour'] 
 	rangeDay = curTime - 60 * 60 * boardData['rankHour']
+	sixHourBeforeTime = curTime - 60 * 60 * 6
 	print datetime.datetime.fromtimestamp(endTime).strftime('%Y-%m-%d %H:%M:%S')
 	print '=================='
 
@@ -481,15 +516,11 @@ def parseKeyword(board_data):
 		only_link = SoupStrainer('a', href=True)
 		soup = BeautifulSoup(copy.copy(response), features=features, parse_only=only_link)
 		print 'contentGet start parse link'	
-		idx = 0
 		for link in soup.findAll('a', href=True):
 			m = re.search('http://.+', link['href'])
 			if not m is None:
 
-				if link['href'] == data['link']:
-					continue
-				if link['href'].find('http://www.ptt.cc/') != -1:
-					continue	
+					
 
 				print '-origin-:' +  link['href'].encode('utf8')
 
@@ -506,19 +537,31 @@ def parseKeyword(board_data):
 					print response_link.geturl()
 					link_data['origin'] = contenturl
 					link_data['real'] = response_link.geturl()
-					title = None
-					if br.viewing_html():
-						try:
-							title =  br.title().encode('utf8')
-						except:	
-							title = 'no title'	
-					else:		
-						title = 'no title'	
-					link_data['title'] = title	
-					link_data['idx'] = idx	
 
+					if link_data['real'] == data['link']:
+						continue
+					if link_data['real'].find('http://www.ptt.cc/') != -1:
+						continue
+
+					title = None
+					try:
+						title =  br.title().encode('utf8')
+					except:	
+						try:
+							soup2 = BeautifulSoup(copy.copy(response_link), features=features)
+							title = soup2.title.string.encode('utf8')
+						except:		
+							title = link_data['real']	
+					
+					link_data['title'] = title	
+					link_data['idx'] = data['push']['all']	
+					link_data['from'] = data['link']
+					print '>>>>>>>>>>>>>>>>>>>'
+					print link_data['title'] 
+					print link_data['real'] 
+					print link_data['idx']
+					print '<<<<<<<<<<<<<<<<<<<'
 					links_data.append(link_data)
-				idx = idx + 1
 
 		#取keyword
 		only_div_acticlemeta = SoupStrainer('div',  {"class":"article-metaline"})

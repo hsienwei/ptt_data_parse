@@ -49,11 +49,11 @@ exports.rank_single_num = function(req, res){
 			var cursor = collection.find({'time':{"$gte":rangeDay}}, {limit:req.params.num, fields:{}})
 			var sort_cursor;
 			if(req.params.sort_type == 'g')		
-				sort_cursor = cursor.sort({ 'push.g': -1})
+				sort_cursor = cursor.sort({ 'extra_push_point.g': -1})
 			else if(req.params.sort_type == 'b')		
-				sort_cursor = cursor.sort({ 'push.b': -1})	  
+				sort_cursor = cursor.sort({ 'extra_push_point.b': -1})	  
 			else 
-				sort_cursor = cursor.sort({ 'push.all': -1})
+				sort_cursor = cursor.sort({ 'extra_push_point.all': -1})
 
 			sort_cursor.toArray(function(err, docs) {
             	res.render('rank_single', { rank: docs});
@@ -81,11 +81,11 @@ exports.rank_group_num = function(req, res){
 			var cursor = collection.find({'time':{"$gte":rangeDay}}, {limit:req.params.num, fields:{}})
 			var sort_cursor;
 			if(req.params.sort_type == 'g')		
-				sort_cursor = cursor.sort({ 'push.g': -1})
+				sort_cursor = cursor.sort({ 'extra_push_point.g': -1})
 			else if(req.params.sort_type == 'b')		
-				sort_cursor = cursor.sort({ 'push.b': -1})	  
+				sort_cursor = cursor.sort({ 'extra_push_point.b': -1})	  
 			else 
-				sort_cursor = cursor.sort({ 'push.all': -1})
+				sort_cursor = cursor.sort({ 'extra_push_point.all': -1})
 			sort_cursor.toArray(function(err, docs) {
             	res.render('rank_group', { rank: docs, board_id:req.params.id});
     			db.close();
@@ -130,6 +130,22 @@ exports.grouplist = function(req, res){
 					  		}
             				
         			   });
+		});
+	});
+};
+
+
+exports.links = function(req, res){
+	var mongodbServer = new mongodb.Server('localhost', 27017, { auto_reconnect: true, poolSize: 10 });
+	var db = new mongodb.Db(req.params.id, mongodbServer);
+	db.open(function() {
+		db.collection('links', function(err, collection) {
+			collection.find({}, {limit:100, fields:{'_id': 0}})
+					  .sort({'idx': -1})
+					  .toArray(function(err, docs) {
+							res.render('links', { list: docs});
+							db.close();
+						});
 		});
 	});
 };
