@@ -2,7 +2,7 @@
 <html lang="en">
   <head>
     <meta charset="utf-8">
-    <title>Pivotal Search</title>
+    <title>Ptt Seeker</title>
     <meta name="description" content="">
     <meta name="author" content="">
 
@@ -12,10 +12,21 @@
     <![endif]-->
 
     <!-- styles -->
-    <link href="/stylesheets/style.css" rel="stylesheet">
-
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" href="/js/jquery.mobile-1.4.2.min.css" />
+    <script src="/js/jquery-1.11.1.min.js"></script>
+    <script src="/js/jquery.mobile-1.4.2.min.js"></script>
   </head>
   <body>
-    <%- body %>
+    <div data-role="header">
+      <h1>Bar</h1>
+    </div><!-- /header -->
+    <div role="main" class="ui-content">
+      <%- body %>
+    </div><!-- /content -->
+
+    <div data-role="footer">
+      <h4>Page Footer</h4>
+    </div><!-- /footer -->
   </body>
 </html>
