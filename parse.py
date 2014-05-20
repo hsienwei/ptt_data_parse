@@ -577,16 +577,17 @@ def parseKeyword(board_data):
 		spans = soup.findAll('span',  {"class":"f2"})
 		[span.extract() for span in spans]
 
-		contenttext = ''
-		for str in div.strings:
-			contenttext += str
+		if not div is None:
+			contenttext = ''
+			for str in div.strings:
+				contenttext += str
 		
-		tags = jieba.analyse.extract_tags( contenttext, topK=10)
-		for tag in tags:
-			if tag in keywords.keys():
-				keywords[tag] = keywords[tag] + 1
-			else:
-				keywords[tag] = 1	
+			tags = jieba.analyse.extract_tags( contenttext, topK=10)
+			for tag in tags:
+				if tag in keywords.keys():
+					keywords[tag] = keywords[tag] + 1
+				else:
+					keywords[tag] = 1	
 
 	sort_dict= sorted(keywords.iteritems(), key=lambda d:d[1], reverse = True)
 	
@@ -623,7 +624,8 @@ if __name__ == "__main__":
 	print 'use features: ' + features
 
 	global db_address
-	db_address = '127.0.0.1' #'54.251.147.205'
+	db_address = '127.0.0.1'
+	#db_address = '54.251.147.205'
 	
 	#parse
 	br = mechanize.Browser()

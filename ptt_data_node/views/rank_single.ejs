@@ -1,28 +1,66 @@
 
+<%
+function initList() {%>
+	<ul class='list' data-role="listview" data-inset="true"></ul> 
+	<a id='more' onclick="loadMore()" href="javascript:void(0);" class="ui-btn ui-mini">more</a>
+<%}
+%>
+
 <%  function singleHtml(data) { %>
-<ul class='list' data-role="listview">
+
+<ul class='list' data-role="listview" data-inset="true">
    <% for(var i=0; i < data.length; ++i) {%>
    <li>
-    <p><%=i+1%> <a href='<%= data[i]['link'] %>'><%= data[i]['title'] %></a>  </p>
-    <p>推 = <%=data[i]['push']['g']%>, 噓 = <%=data[i]['push']['b']%>, 總和 = <%=data[i]['push']['all']%></p>
+    <div><%=i+1%> <a href='<%= data[i]['link'] %>'><%= data[i]['title'] %></a>  <br>
+    推 = <%=data[i]['push']['g']%>, 噓 = <%=data[i]['push']['b']%>, 總和 = <%=data[i]['push']['all']%></div>
     </li>
     
   <%}%>
  </ul> 
- <a onclick="loadMore()" href="javascript:void(0);" class="ui-btn">more</a>
+
+ <a onclick="loadMore()" href="javascript:void(0);" class="ui-btn ui-mini">more</a>
+
 <%} %>
 
 <script>
-function loadMore()
-{
-	var origin = $('ul.list').html();
-	$('ul.list').html(origin + '<li><p>aa</p></li>'  );
-}
+	var board = '<%=board%>'
+	var listShowIdx = 0;
+
+	function dataToList(data)
+	{
+		var html = ''
+		for(var i=0; i < data.length; ++i) {
+  		  	html += "<li><div> " + (listShowIdx *10 +i+1) + " <a href='" + data[i]['link'] + "'>" + data[i]['title']  + "</a>  <br>" + 
+   		 			"推 = " + data[i]['push']['g'] + ", 噓 = " + data[i]['push']['b'] + ", 總和 = " + data[i]['push']['all']  + "</div></li>";
+    	}
+ 	return html;
+	}
+
+    function loadMore()
+    {
+    	$.ajax({
+      		url: "/testget",
+      		type: "POST",
+      		data: { pageIdx: listShowIdx, board:board}
+    	})
+      	.done(function( data ) {
+      		$('ul.list').append(dataToList(data));
+    		$('ul.list').listview('refresh');
+    		listShowIdx++;
+      		if(data == null || data.length == 0)    
+      			$('#more').hide();
+      	});
+    }
+
+    $(document).ready(function ()
+    {
+    	listShowIdx = 0;
+    	loadMore();
+    });
 </script>
 
+<div >
+	<h1>單則排行</h1>
+	<% initList() %>
 
-<h1>單則排行</h1>
-
-<% singleHtml(rank) %>
-
-
+</div>
