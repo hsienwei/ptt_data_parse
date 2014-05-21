@@ -22,18 +22,27 @@ def formProcess2(url):
 	global listLink
 	global features
 	global curTime
+	global flagStop
 	
 	print 'process list:' + url
 
+	try_time = 0
 	response = None
 	time.sleep(1)
 	while (response is None):
 		try:
+			if try_time > 50:
+				flagStop = True
+				break
 			response = br.open(url)
 		except:	
 			print 're Try'
 			response = None	
+		try_time = try_time + 1	
 		time.sleep(3)	
+
+	if flagStop:
+		return	
 
 	if response.geturl().find('over18') != -1:
 		print 'over 18 page process'
