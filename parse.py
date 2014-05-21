@@ -14,6 +14,7 @@ import copy
 import platform
 import jieba
 import jieba.analyse
+import sys
 
 def formProcess2(url):
 	global br
@@ -529,11 +530,9 @@ def parseKeyword(board_data):
 			m = re.search('http://.+', link['href'])
 			if not m is None:
 
-					
-
 				print '-origin-:' +  link['href'].encode('utf8')
 
-				contenturl = link['href']
+				contenturl = link['href'].encode('utf8')
 
 				response_link = None
 				try:
@@ -554,12 +553,28 @@ def parseKeyword(board_data):
 
 					title = None
 					try:
-						title =  br.title().encode('utf8')
+						print sys.getdefaultencoding()
+						print 'a'
+						if isinstance(br.title(), unicode):
+							print 'a-1'
+							title =  br.title().encode('utf8')
+						else: 
+							print 'a-2'
+							title =  br.title().decode(sys.getdefaultencoding()).encode('utf8')
 					except:	
 						try:
+							print 'b'
 							soup2 = BeautifulSoup(copy.copy(response_link), features=features)
-							title = soup2.title.string.encode('utf8')
+							print type(soup2.title.string)
+							#title = soup2.title.string.decode(sys.getdefaultencoding()).encode('utf8')
+							if isinstance(soup2.title.string, unicode):
+								print 'b-1'
+								title = soup2.title.string.encode('utf8')
+							else: 
+								print 'b-2'
+								title = soup2.title.string.decode(sys.getdefaultencoding()).encode('utf8')
 						except:		
+							print 'c'
 							title = link_data['real']	
 					
 					link_data['title'] = title	
@@ -651,8 +666,8 @@ if __name__ == "__main__":
 
 	for boardData in processBoard:
 		print '********* process' + boardData['name'] + '*********'
-		boardProcess(boardData)
-		#parseKeyword(boardData)
+		#boardProcess(boardData)
+		parseKeyword(boardData)
 
 	conn=pymongo.Connection(db_address,27017)
 
