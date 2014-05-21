@@ -7,11 +7,25 @@ var mongodb = require('mongodb');
 var async = require('async');
 
 
-
-
 exports.index = function(req, res){
 	res.render('index');
    	
+};
+
+exports.board_select = function(req, res){
+	var action = req.params.act;
+	var mongodbServer = new mongodb.Server('localhost', 27017, { auto_reconnect: true, poolSize: 10 });
+	var db = new mongodb.Db('setting', mongodbServer);
+	db.open(function() {
+		db.collection('board_list', function(err, collection) {
+			collection.find({}, {fields:{'_id': 0}})
+					  .toArray(function(err, docs) {
+					  	console.log(docs);
+            			 res.render('board_select', { 'act': action , 'data':docs});
+    					db.close();
+        			   });
+		});
+	});
 };
 
 
@@ -34,37 +48,10 @@ exports.rank = function(req, res){
 
 
 exports.rank_single = function(req, res){
-	// if (req.params.sort_type == null)
-	// 	res.redirect('/rank/' + req.params.id + '/single/g/10');
-	// else	
-	// 	res.redirect('/rank/' + req.params.id + '/single/' + req.params.sort_type + '/10');
 	var sortType = req.params.sort_type;
 	if(sortType == null)    req.params.sort_type = 'g';
 
 	res.render('rank_single', { board:req.params.id, sort:sortType});
-};
-
-exports.rank_single_num = function(req, res){
-	// var mongodbServer = new mongodb.Server('localhost', 27017, { auto_reconnect: true, poolSize: 10 });
-	// var db = new mongodb.Db(req.params.id, mongodbServer);
-	// db.open(function() {
-	// 	rangeDay = Date.now()/1000 - 60 * 60 * 24 * 5 
-	// 	db.collection('single', function(err, collection) {
-	// 		var cursor = collection.find({'time':{"$gte":rangeDay}}, {limit:req.params.num, fields:{}})
-	// 		var sort_cursor;
-	// 		if(req.params.sort_type == 'g')		
-	// 			sort_cursor = cursor.sort({ 'extra_push_point.g': -1})
-	// 		else if(req.params.sort_type == 'b')		
-	// 			sort_cursor = cursor.sort({ 'extra_push_point.b': -1})	  
-	// 		else 
-	// 			sort_cursor = cursor.sort({ 'extra_push_point.all': -1})
-
-	// 		sort_cursor.toArray(function(err, docs) {
- //            	res.render('rank_single', { rank: docs, board:req.params.id});
- //    			db.close();
- //        	});
-	// 	});
-	// });
 };
 
 exports.rank_group = function(req, res){

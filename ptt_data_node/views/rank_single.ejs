@@ -31,8 +31,8 @@ function initList() {%>
 	{
 		var html = ''
 		for(var i=0; i < data.length; ++i) {
-  		  	html += "<li><div> " + (listShowIdx *10 +i+1) + " <a href='" + data[i]['link'] + "' target='_blank'>" + data[i]['title']  + "</a>  <br>" + 
-   		 			"推 = " + data[i]['push']['g'] + ", 噓 = " + data[i]['push']['b'] + ", 總和 = " + data[i]['push']['all']  + "</div></li>";
+  		  	html += "<li><div><p> " + (listShowIdx *10 +i+1) + " <a href='" + data[i]['link'] + "' target='_blank'>" + data[i]['title']  + "</a>  <br>" + 
+   		 			"推 = " + data[i]['push']['g'] + ", 噓 = " + data[i]['push']['b'] + ", 總和 = " + data[i]['push']['all']  + "</p></div></li>";
     }
  	  return html;
 	}
