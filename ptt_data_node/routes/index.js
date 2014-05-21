@@ -23,7 +23,7 @@ exports.rank = function(req, res){
 			collection.find({}, {limit:1, fields:{'_id': 0}})
 					  .sort({'time': -1})
 					  .toArray(function(err, docs) {
-					  	console.log(docs);
+					  	//console.log(docs);
             			res.render('rank', { rank: docs[0], board_id:req.params.id });
     					db.close();
         			   });
@@ -38,7 +38,10 @@ exports.rank_single = function(req, res){
 	// 	res.redirect('/rank/' + req.params.id + '/single/g/10');
 	// else	
 	// 	res.redirect('/rank/' + req.params.id + '/single/' + req.params.sort_type + '/10');
-	res.render('rank_single', { board:req.params.id});
+	var sortType = req.params.sort_type;
+	if(sortType == null)    req.params.sort_type = 'g';
+
+	res.render('rank_single', { board:req.params.id, sort:sortType});
 };
 
 exports.rank_single_num = function(req, res){
@@ -153,10 +156,11 @@ exports.links = function(req, res){
 
 
 
-exports.testget = function(req, res)
+exports.singleRankGet = function(req, res)
 {
 	console.log(req.body.pageIdx);
 	console.log(req.body.board);
+	console.log(req.body.sort);
 
 	var mongodbServer = new mongodb.Server('localhost', 27017, { auto_reconnect: true, poolSize: 10 });
 	var db = new mongodb.Db(req.body.board, mongodbServer);
@@ -165,10 +169,12 @@ exports.testget = function(req, res)
 		db.collection('single', function(err, collection) {
 			var cursor = collection.find({'time':{"$gte":rangeDay}}, {skip: (req.body.pageIdx * 10), limit:10, fields:{}})
 			var sort_cursor;
-	
-				sort_cursor = cursor.sort({ 'push.g': -1})
-			
-
+			if(req.body.sort == 'g')		
+				sort_cursor = cursor.sort({ 'extra_push_point.g': -1})
+			else if(req.body.sort == 'b')		
+				sort_cursor = cursor.sort({ 'extra_push_point.b': -1})	  
+			else 
+				sort_cursor = cursor.sort({ 'extra_push_point.all': -1})
 			sort_cursor.toArray(function(err, docs) {
             	res.send(docs);
     			db.close();
