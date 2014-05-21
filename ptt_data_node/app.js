@@ -14,7 +14,7 @@ var path = require('path');
 var app = express();
 
 // all environments
-app.set('port', process.env.PORT || 80);
+app.set('port', process.env.PORT || 3001);
 app.set('views', path.join(__dirname, 'views'));
 app.set('view engine', 'ejs');
 app.use(partials());
@@ -41,7 +41,9 @@ app.get('/rank/:id/group/:sort_type', routes.rank_group);
 app.get('/rank/:id/group/:sort_type/:num', routes.rank_group_num);
 app.get('/grouplist/:id/:title', routes.grouplist);
 
-app.post('/testget', routes.testget)
+app.get('/board_select/:act', routes.board_select);
+
+app.post('/singleRankGet', routes.singleRankGet)
 
 app.get('/links/:id', routes.links);
 //app.get('/users', user.list);

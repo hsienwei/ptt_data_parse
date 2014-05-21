@@ -643,18 +643,24 @@ if __name__ == "__main__":
 
 
 
-	processBoard = [{'name': 'Gossiping'   , 'parseHour':24, 'rankHour':72 },  \
-					{'name': 'beauty'      , 'parseHour':72, 'rankHour':72},  \
-					{'name': 'joke'      , 'parseHour':72, 'rankHour':72},  \
-					{'name': 'StupidClown'      , 'parseHour':72, 'rankHour':72},  \
-					{'name': 'sex'      , 'parseHour':72, 'rankHour':72}]
+	processBoard = [{'name': 'Gossiping'   , 'parseHour':1, 'rankHour':72 },  \
+					{'name': 'beauty'      , 'parseHour':3, 'rankHour':72},  \
+					{'name': 'joke'      , 'parseHour':3, 'rankHour':72},  \
+					{'name': 'StupidClown'      , 'parseHour':3, 'rankHour':72},  \
+					{'name': 'sex'      , 'parseHour':3, 'rankHour':72}]
 
 	for boardData in processBoard:
 		print '********* process' + boardData['name'] + '*********'
 		boardProcess(boardData)
 		#parseKeyword(boardData)
 
-		
+	conn=pymongo.Connection(db_address,27017)
+
+	db = conn['setting']
+	db.board_list.drop()
+	for boardData in processBoard:
+		boardName = boardData['name']
+		db.board_list.insert({'board':boardName})
 
 					  	
 		

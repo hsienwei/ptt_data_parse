@@ -24,32 +24,35 @@ function initList() {%>
 
 <script>
 	var board = '<%=board%>'
+  var sort = '<%=sort%>'
 	var listShowIdx = 0;
 
 	function dataToList(data)
 	{
 		var html = ''
 		for(var i=0; i < data.length; ++i) {
-  		  	html += "<li><div> " + (listShowIdx *10 +i+1) + " <a href='" + data[i]['link'] + "'>" + data[i]['title']  + "</a>  <br>" + 
-   		 			"推 = " + data[i]['push']['g'] + ", 噓 = " + data[i]['push']['b'] + ", 總和 = " + data[i]['push']['all']  + "</div></li>";
-    	}
- 	return html;
+  		  	html += "<li><div><p> " + (listShowIdx *10 +i+1) + " <a href='" + data[i]['link'] + "' target='_blank'>" + data[i]['title']  + "</a>  <br>" + 
+   		 			"推 = " + data[i]['push']['g'] + ", 噓 = " + data[i]['push']['b'] + ", 總和 = " + data[i]['push']['all']  + "</p></div></li>";
+    }
+ 	  return html;
 	}
 
     function loadMore()
     {
     	$.ajax({
-      		url: "/testget",
+      		url: "/singleRankGet",
       		type: "POST",
-      		data: { pageIdx: listShowIdx, board:board}
+      		data: { pageIdx: listShowIdx, board:board, sort:sort}
     	})
-      	.done(function( data ) {
-      		$('ul.list').append(dataToList(data));
-    		$('ul.list').listview('refresh');
-    		listShowIdx++;
-      		if(data == null || data.length == 0)    
-      			$('#more').hide();
-      	});
+      .done(function( data ) {
+      	$('ul.list').append(dataToList(data));
+    	  $('ul.list').listview('refresh');
+    	  
+      	if(data == null || data.length < 10)    
+      		$('#more').hide();
+        else
+          listShowIdx++;
+      });
     }
 
     $(document).ready(function ()
@@ -57,6 +60,7 @@ function initList() {%>
     	listShowIdx = 0;
     	loadMore();
     });
+
 </script>
 
 <div >
