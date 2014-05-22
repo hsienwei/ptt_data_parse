@@ -15,6 +15,7 @@ import platform
 import jieba
 import jieba.analyse
 import sys
+import tweepy
 
 def formProcess2(url):
 	global br
@@ -663,7 +664,9 @@ if __name__ == "__main__":
 	br.set_handle_robots(False) # ignore robots
 	br.set_handle_refresh(False)
 
-
+	auth = tweepy.OAuthHandler('5As2TTlHzlSMto0elUTHFnyyT', 'YsEZpqKaAzlJN7FqyKgTLEzluNfeR4i39ICgmgh39OhMxWsnZl')
+	auth.set_access_token('17033508-DshqArq0fbT7Qh2ALofLNehxOntA53VYvFvrKuFWk', 'MLEM2MuLKjd9kHvVjCsH8hcF65GZvDAwtDEgeU2skn9rV')
+	api = tweepy.API(auth)		
 
 	processBoard = [{'name': 'Gossiping'   , 'parseHour':24, 'rankHour':72 },  \
 					{'name': 'beauty'      , 'parseHour':72, 'rankHour':72},  \
@@ -671,11 +674,17 @@ if __name__ == "__main__":
 					{'name': 'StupidClown'      , 'parseHour':72, 'rankHour':72},  \
 					{'name': 'sex'      , 'parseHour':72, 'rankHour':72}]
 
+	pre_time = datetime.datetime.fromtimestamp(time.time()).strftime('%Y-%m-%d %H:%M:%S')
+	tag = '#pttWatcher'
+	api.update_status('ptt bbs data parse start.\n' + tag)			
 	for boardData in processBoard:
 		print '********* process' + boardData['name'] + '*********'
-		boardProcess(boardData)
-		#parseKeyword(boardData)
-
+		#boardProcess(boardData)
+		api.update_status( boardData['name'] + 'board rank data parse over.\n' + tag)				
+		#parseKeyword(boardData)＃
+		#api.update_status( boardData['name'] + 'board other data parse over.\n' + tag)				
+		
+	
 	conn=pymongo.Connection(db_address,27017)
 
 	db = conn['setting']
@@ -683,6 +692,13 @@ if __name__ == "__main__":
 	for boardData in processBoard:
 		boardName = boardData['name']
 		db.board_list.insert({'board':boardName})
+	
+	api.update_status('ptt bbs data parse all over.\n' + tag)	
+	
+	
+
+			 
+	 
 
 					  	
 		
