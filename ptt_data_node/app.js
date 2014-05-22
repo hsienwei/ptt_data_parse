@@ -31,7 +31,12 @@ if ('development' == app.get('env')) {
   app.use(express.errorHandler());
 }
 
-app.get('/', routes.index);
+//app.get('/', routes.index);
+app.get('/', function (req, res) {
+    console.log("get /");
+    res.sendfile(__dirname + '/public/index.html');
+});
+
 app.get('/rank/:id', routes.rank);
 app.get('/rank/:id/single', routes.rank_single);
 app.get('/rank/:id/single/:sort_type', routes.rank_single);

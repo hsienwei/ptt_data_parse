@@ -7,10 +7,10 @@ var mongodb = require('mongodb');
 var async = require('async');
 
 
-exports.index = function(req, res){
-	res.render('index');
-   	
-};
+// exports.index = function(req, res){
+// 	//res.render('./index.html');
+//    	res.sendfile(__dirname + '/public/index.html');
+// };
 
 exports.board_select = function(req, res){
 	var action = req.params.act;

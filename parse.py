@@ -664,24 +664,28 @@ if __name__ == "__main__":
 	br.set_handle_robots(False) # ignore robots
 	br.set_handle_refresh(False)
 
-	auth = tweepy.OAuthHandler('5As2TTlHzlSMto0elUTHFnyyT', 'YsEZpqKaAzlJN7FqyKgTLEzluNfeR4i39ICgmgh39OhMxWsnZl')
-	auth.set_access_token('17033508-DshqArq0fbT7Qh2ALofLNehxOntA53VYvFvrKuFWk', 'MLEM2MuLKjd9kHvVjCsH8hcF65GZvDAwtDEgeU2skn9rV')
+	twitter_data = None
+	with open("twitter_setting.json", "r") as f:
+		twitter_data = f.read() 
+	twitter_obj = json.loads(twitter_data)	
+	auth = tweepy.OAuthHandler(twitter_obj['consumer_key'], twitter_obj['consumer_secret'])
+	auth.set_access_token(twitter_obj['access_token'], twitter_obj['access_token_secret'])
 	api = tweepy.API(auth)		
 
-	processBoard = [{'name': 'Gossiping'   , 'parseHour':24, 'rankHour':72 },  \
-					{'name': 'beauty'      , 'parseHour':72, 'rankHour':72},  \
-					{'name': 'joke'      , 'parseHour':72, 'rankHour':72},  \
-					{'name': 'StupidClown'      , 'parseHour':72, 'rankHour':72},  \
-					{'name': 'sex'      , 'parseHour':72, 'rankHour':72}]
+	processBoard = [{'name': 'Gossiping'   	, 'parseHour':24, 'rankHour':72 },  \
+					{'name': 'beauty'      	, 'parseHour':72, 'rankHour':72},  \
+					{'name': 'joke'      	, 'parseHour':72, 'rankHour':72},  \
+					{'name': 'StupidClown'	, 'parseHour':72, 'rankHour':72},  \
+					{'name': 'sex'      	, 'parseHour':72, 'rankHour':72}]
 
 	pre_time = datetime.datetime.fromtimestamp(time.time()).strftime('%Y-%m-%d %H:%M:%S')
-	tag = '#pttwatcher'
+	tag = '#pttWatcher'
 	api.update_status('ptt bbs data parse start.\n' + pre_time + '\n' + tag)			
 	for boardData in processBoard:
 		print '********* process' + boardData['name'] + '*********'
 		boardProcess(boardData)
 		api.update_status( boardData['name'] + 'board rank data parse over.\n' + pre_time + '\n' + tag)				
-		#parseKeyword(boardData)＃
+		#parseKeyword(boardData)
 		#api.update_status( boardData['name'] + 'board other data parse over.\n' + pre_time + '\n' + tag)				
 		
 	
