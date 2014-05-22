@@ -191,7 +191,14 @@ def contentGet(id, contentLink):
 					pushNormalCount = pushNormalCount + 1	
 			#推文時間
 			pushTime = pushdiv.find("span", {"class":"push-ipdatetime"})
-			parsedTime = parser.parse(pushTime.string)
+			#推文時間可能會是ip與時間的集合  僅抽出時間  183.4.230.250 05/22 00:57
+			m = re.search('([0-9]{1,3}.[0-9]{1,3}.[0-9]{1,3}.[0-9]{1,3} )?([0-9]{2}/[0-9]{2} [0-9]{2}:[0-9]{2})', pushTime.string)
+			print '--- push time---'
+			for match in m.groups():
+				print match
+			print '--- push time end---'
+
+			parsedTime = parser.parse(m.groups()[1])
 			#if pushTmpYearOffset > 0:
 			#	parsedTime = parsedTime.replace(year=parsedTime.year+pushTmpYearOffset)
 			parsedTimeStr = parsedTime.strftime("%Y-%m-%d %H:%M:%S")
@@ -658,16 +665,16 @@ if __name__ == "__main__":
 
 
 
-	processBoard = [{'name': 'Gossiping'   , 'parseHour':1, 'rankHour':72 },  \
-					{'name': 'beauty'      , 'parseHour':3, 'rankHour':72},  \
-					{'name': 'joke'      , 'parseHour':3, 'rankHour':72},  \
-					{'name': 'StupidClown'      , 'parseHour':3, 'rankHour':72},  \
-					{'name': 'sex'      , 'parseHour':3, 'rankHour':72}]
+	processBoard = [{'name': 'Gossiping'   , 'parseHour':24, 'rankHour':72 },  \
+					{'name': 'beauty'      , 'parseHour':72, 'rankHour':72},  \
+					{'name': 'joke'      , 'parseHour':72, 'rankHour':72},  \
+					{'name': 'StupidClown'      , 'parseHour':72, 'rankHour':72},  \
+					{'name': 'sex'      , 'parseHour':72, 'rankHour':72}]
 
 	for boardData in processBoard:
 		print '********* process' + boardData['name'] + '*********'
-		#boardProcess(boardData)
-		parseKeyword(boardData)
+		boardProcess(boardData)
+		#parseKeyword(boardData)
 
 	conn=pymongo.Connection(db_address,27017)
 

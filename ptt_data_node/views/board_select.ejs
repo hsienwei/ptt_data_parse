@@ -1,0 +1,16 @@
+
+<%
+function setBoardList(data)
+{ 
+    for( i=0; i< data.length; ++i) {
+%>
+    <li>
+        <a href="/<%= act%>/<%=data[i]['board']%>"><%=data[i]['board']%></a>
+    </li>
+<%  }
+}
+%>
+
+<ul data-role="listview" data-inset="true">
+  <%setBoardList(data)%>  
+</ul>   
