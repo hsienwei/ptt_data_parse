@@ -675,14 +675,14 @@ if __name__ == "__main__":
 					{'name': 'sex'      , 'parseHour':72, 'rankHour':72}]
 
 	pre_time = datetime.datetime.fromtimestamp(time.time()).strftime('%Y-%m-%d %H:%M:%S')
-	tag = '#pttWatcher'
-	api.update_status('ptt bbs data parse start.\n' + tag)			
+	tag = '#pttwatcher'
+	api.update_status('ptt bbs data parse start.\n' + pre_time + '\n' + tag)			
 	for boardData in processBoard:
 		print '********* process' + boardData['name'] + '*********'
-		#boardProcess(boardData)
-		api.update_status( boardData['name'] + 'board rank data parse over.\n' + tag)				
+		boardProcess(boardData)
+		api.update_status( boardData['name'] + 'board rank data parse over.\n' + pre_time + '\n' + tag)				
 		#parseKeyword(boardData)＃
-		#api.update_status( boardData['name'] + 'board other data parse over.\n' + tag)				
+		#api.update_status( boardData['name'] + 'board other data parse over.\n' + pre_time + '\n' + tag)				
 		
 	
 	conn=pymongo.Connection(db_address,27017)
@@ -692,8 +692,8 @@ if __name__ == "__main__":
 	for boardData in processBoard:
 		boardName = boardData['name']
 		db.board_list.insert({'board':boardName})
-	
-	api.update_status('ptt bbs data parse all over.\n' + tag)	
+		
+	api.update_status('ptt bbs data parse all over.\n' + pre_time + '\n' + tag)	
 	
 	
 
