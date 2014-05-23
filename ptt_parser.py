@@ -502,15 +502,15 @@ class PttWebParser	:
 				if context_obj:
 				 	self._complete_context(context_obj, context_list)
 				 	
-				#save to db
-				#conn=pymongo.Connection('54.251.147.205',27017)
-				conn=pymongo.Connection(self.db_address, 27017)
-				db = conn[board_name]#conn['Gossiping']
-				self._context_to_single_db(db, context_obj)
-				self._context_to_group_db(db, context_obj)
-				#如果超過指定時間結束
-				if context_obj['time'] < endTime:
-					flag_stop = True
+					#save to db
+					#conn=pymongo.Connection('54.251.147.205',27017)
+					conn=pymongo.Connection(self.db_address, 27017)
+					db = conn[board_name]#conn['Gossiping']
+					self._context_to_single_db(db, context_obj)
+					self._context_to_group_db(db, context_obj)
+					#如果超過指定時間結束
+					if context_obj['time'] < endTime:
+						flag_stop = True
 			if flag_stop:
 				list_link = None
 			else:
