@@ -20,3 +20,5 @@ if __name__ == "__main__":
 	parser.board_parse('StupidClown', 24)
 	parser.board_parse('sex', 24)
 	update_board_list(board_list)
+	# parser.context_parse('http://www.ptt.cc/bbs/Gossiping/M.1400910457.A.ED9.html')
+	  

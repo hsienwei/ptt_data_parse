@@ -310,20 +310,24 @@ class PttWebParser	:
 				pushTime = pushdiv.find("span", {"class":"push-ipdatetime"})
 				#推文時間可能會是ip與時間的集合  僅抽出時間  183.4.230.250 05/22 00:57
 				m = re.search('([0-9]{1,3}.[0-9]{1,3}.[0-9]{1,3}.[0-9]{1,3} )?([0-9]{2}/[0-9]{2} [0-9]{2}:[0-9]{2})', pushTime.string)
-	
-				parsedTime = parser.parse(m.groups()[1])
-				#if pushTmpYearOffset > 0:
-				#	parsedTime = parsedTime.replace(year=parsedTime.year+pushTmpYearOffset)
-				parsedTimeStr = parsedTime.strftime("%Y-%m-%d %H:%M:%S")
-				parsedTimeStamp = time.mktime(time.strptime(parsedTimeStr, '%Y-%m-%d %H:%M:%S'))
-				if parsedTimeStamp > self.sixHourBeforeTime:
-					extraPushPoint = extraPushPoint + 1;
-				#print type(parsedTime)
-				#print type(parsedTimeStr)
-				#print parsedTimeStr
-				if pushTmpMonth > parsedTime.month:
-					pushTmpYearOffset = pushTmpYearOffset + 1
-				pushTmpMonth = parsedTime.month
+
+				if m is None:
+					continue
+
+				if not m.groups()[1] is None: 
+					parsedTime = parser.parse(m.groups()[1])
+					#if pushTmpYearOffset > 0:
+					#	parsedTime = parsedTime.replace(year=parsedTime.year+pushTmpYearOffset)
+					parsedTimeStr = parsedTime.strftime("%Y-%m-%d %H:%M:%S")
+					parsedTimeStamp = time.mktime(time.strptime(parsedTimeStr, '%Y-%m-%d %H:%M:%S'))
+					if parsedTimeStamp > self.sixHourBeforeTime:
+						extraPushPoint = extraPushPoint + 1;
+					#print type(parsedTime)
+					#print type(parsedTimeStr)
+					#print parsedTimeStr
+					if pushTmpMonth > parsedTime.month:
+						pushTmpYearOffset = pushTmpYearOffset + 1
+					pushTmpMonth = parsedTime.month
 			print 'pushAllCount ' + str(pushGoodCount + pushBadCount + pushNormalCount)
 			print 'extraPushPoint ' + str(extraPushPoint)
 	
