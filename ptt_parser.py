@@ -18,151 +18,7 @@ import sys
 import tweepy
 
 
-def parseKeyword(board_data):
-	global br
-	global db_address
 
-	conn=pymongo.Connection(db_address,27017)
-	db = conn[board_data['name']]
-
-	rank_data = list(db.single.find({}, { '_id': 0}) \
-						    .sort([('push.all', pymongo.DESCENDING)]) \
-							.limit(50))	
-	keywords = {}
-	links_data = []
-
-	for data in rank_data:
-		
-		response = None
-		try:
-			#response = br.open('http://www.ptt.cc/bbs/Gossiping/M.1398786724.A.D29.html')
-			response = br.open(data['link'])
-			print data['link']
-		
-			if response.geturl().find('over18') != -1:
-				print 'over 18 page process'
-				br.select_form(nr=0)
-				response = br.submit(name='yes', label='yes')
-		except:	
-			response = None	
-			
-		if response is None:	
-			continue 
-
-		#取連結
-		only_link = SoupStrainer('a', href=True)
-		soup = BeautifulSoup(copy.copy(response), features=features, parse_only=only_link)
-		print 'contentGet start parse link'	
-		for link in soup.findAll('a', href=True):
-			m = re.search('http://.+', link['href'])
-			if not m is None:
-
-				print '-origin-:' +  link['href'].encode('utf8')
-
-				contenturl = link['href'].encode('utf8')
-
-				response_link = None
-				try:
-					response_link = br.open(contenturl, timeout=30.0)
-				except:	
-					response_link = None		
-
-				if not response_link is None:
-					link_data = {}
-					print response_link.geturl()
-					link_data['origin'] = contenturl
-					link_data['real'] = response_link.geturl()
-
-					if link_data['real'] == data['link']:
-						continue
-					if link_data['real'].find('http://www.ptt.cc/') != -1:
-						continue
-
-					title = None
-					try:
-						print sys.getdefaultencoding()
-						print 'a'
-						if isinstance(br.title(), unicode):
-							print 'a-1'
-							title =  br.title().encode('utf8')
-						else: 
-							print 'a-2'
-							title =  br.title().decode(sys.getdefaultencoding()).encode('utf8')
-					except:	
-						try:
-							print 'b'
-							soup2 = BeautifulSoup(copy.copy(response_link), features=features)
-							print type(soup2.title.string)
-							#title = soup2.title.string.decode(sys.getdefaultencoding()).encode('utf8')
-							if isinstance(soup2.title.string, unicode):
-								print 'b-1'
-								title = soup2.title.string.encode('utf8')
-							else: 
-								print 'b-2'
-								title = soup2.title.string.decode(sys.getdefaultencoding()).encode('utf8')
-						except:		
-							print 'c'
-							title = link_data['real']	
-					
-					link_data['title'] = title	
-					link_data['idx'] = data['push']['all']	
-					link_data['from'] = data['link']
-					print '>>>>>>>>>>>>>>>>>>>'
-					print link_data['title'] 
-					print link_data['real'] 
-					print link_data['idx']
-					print '<<<<<<<<<<<<<<<<<<<'
-					links_data.append(link_data)
-
-		#取keyword
-		only_div_acticlemeta = SoupStrainer('div',  {"class":"article-metaline"})
-		soup = BeautifulSoup(copy.copy(response), features=features, parse_only=only_div_acticlemeta)
-		div = soup.find('div',  {"class":"bbs-screen bbs-content"})
-
-		titles = soup.findAll('div',  {"class":"article-metaline"})
-		[title.extract() for title in titles]
-		titles2 = soup.findAll('div',  {"class":"article-metaline-right"})
-		[title.extract() for title in titles2]
-		pushs = soup.findAll('div',  {"class":"push"})
-		[push.extract() for push in pushs]
-		spans = soup.findAll('span',  {"class":"f2"})
-		[span.extract() for span in spans]
-
-		if not div is None:
-			contenttext = ''
-			for str in div.strings:
-				contenttext += str
-		
-			tags = jieba.analyse.extract_tags( contenttext, topK=10)
-			for tag in tags:
-				if tag in keywords.keys():
-					keywords[tag] = keywords[tag] + 1
-				else:
-					keywords[tag] = 1	
-
-	sort_dict= sorted(keywords.iteritems(), key=lambda d:d[1], reverse = True)
-	
-	#for key in sort_dict:
-	#	print key[0]
-
-	for keyword_data in sort_dict:
-		keyword = keyword_data[0].encode('utf8')
-		count = keyword_data[1]
-		findData = db.keyword.find_one({'keyword': keyword})
-		if findData is None:
-			db.keyword.insert({'keyword': keyword, 'count': count})
-		else:
-			findData['count'] = count
-			db.keyword.save(findData)
-
-	db.links.drop()
-	for link_data in links_data:
-		db.links.insert(link_data)
-		
-
-	jsonStr = json.dumps(sort_dict, indent=4)
-	with open("keyword.json", "w") as f:
-		f.write(jsonStr) 
 
 class TwitterRecorder:
 	def	__init__(self):
@@ -400,8 +256,276 @@ class PttWebParser	:
 					#object['title'] = metaDivValue.string
 					content_obj['title'] = metaDivValue.string
 			print 'contentGet stop parse time'	
+
+			keyword = self._keyword_parse(response)
+			if keyword:
+				content_obj['keyword'] = keyword
+
+			links = self._link_parse(response, link)
+			if len(links) > 0:
+				content_obj['links'] = links
+
+			fb_data = self._fb_parse(link)	
+
 			
-		return content_obj		
+		return content_obj	
+
+	def _fb_parse(self, origin_link):
+		url = 'https://api.facebook.com/method/fql.query?format=json&query=select%20%20like_count,%20share_count,comment_count%20from%20link_stat%20where%20url=%22' + origin_link.string + '%22'
+		print url
+		response = self.br.open(url, timeout=30.0)
+		print response.read()
+		time.sleep(3)
+
+	def _link_parse(self, response, origin_link):
+		#取連結
+		only_link = SoupStrainer('a', href=True)
+		soup = BeautifulSoup(copy.copy(response), features=self.features, parse_only=only_link)
+		print 'contentGet start parse link'	
+		link_ary = []
+		for link in soup.findAll('a', href=True):
+			m = re.search('http://.+', link['href'])
+			if not m is None:
+
+				print '-origin-:' +  link['href'].encode('utf8')
+
+				contenturl = link['href'].encode('utf8')
+
+				response_link = None
+				try:
+					response_link = self.br.open(contenturl, timeout=30.0)
+				except:	
+					response_link = None		
+
+				if not response_link is None:
+					link_data = {}
+					print response_link.geturl()
+					link_data['origin'] = contenturl
+					link_data['real'] = response_link.geturl()
+
+					if link_data['real'] == origin_link:
+						continue
+					if link_data['real'].find('http://www.ptt.cc/') != -1:
+						continue
+
+					title = None
+					pre_word = ''
+					try:
+						'''
+						print sys.getdefaultencoding()
+						print 'a '
+						pre_word = pre_word + 'a '
+						if isinstance(self.br.title(), unicode):
+							print 'a-1 '
+							pre_word = pre_word + 'a-1 '
+							title =  pre_word + self.br.title().encode('utf8')
+						else: 
+							print 'a-2 '
+							pre_word = pre_word + 'a-2 '
+							title =  pre_word + self.br.title().encode('utf8')
+							'''
+						title =  self.br.title().encode('utf8')	
+					except:	
+						'''
+						print sys.exc_info()[0]
+						try:
+							pre_word = pre_word +  'b '
+							print 'b '
+							soup2 = BeautifulSoup(response_link.read().decode('utf-8', 'ignore'), features=self.features)
+							#pre_word = pre_word +  type(soup2.title.string) + '  '
+							#title = soup2.title.string.decode(sys.getdefaultencoding()).encode('utf8')
+							if isinstance(soup2.title.string, unicode):
+								print 'b-1 '
+								pre_word = pre_word + 'b-1 '
+								title = pre_word + soup2.title.string
+							else: 
+								print 'b-2 '
+								pre_word = pre_word +  'b-2 '
+								title = pre_word + soup2.title.string.decode(sys.getdefaultencoding()).encode('utf8')
+						except:		
+							print 'c'
+							print sys.exc_info()[0]
+							pre_word = pre_word +  'c '
+							title = pre_word + link_data['real']	
+						'''	
+						title = link_data['real']	
+
+					link_data['title'] = title	
+					link_ary.append(link_data)
+		return link_ary			
+
+	def _keyword_parse(self, response):
+		#取keyword
+		only_div_acticlemeta = SoupStrainer('div',  {"class":"article-metaline"})
+		soup = BeautifulSoup(copy.copy(response), features=self.features, parse_only=only_div_acticlemeta)
+		div = soup.find('div',  {"class":"bbs-screen bbs-content"})
+
+		titles = soup.findAll('div',  {"class":"article-metaline"})
+		[title.extract() for title in titles]
+		titles2 = soup.findAll('div',  {"class":"article-metaline-right"})
+		[title.extract() for title in titles2]
+		pushs = soup.findAll('div',  {"class":"push"})
+		[push.extract() for push in pushs]
+		spans = soup.findAll('span',  {"class":"f2"})
+		[span.extract() for span in spans]
+
+		tags = None
+		if not div is None:
+			contenttext = ''
+			for str in div.strings:
+				contenttext += str
+		
+			tags = jieba.analyse.extract_tags( contenttext, topK=10)		
+			print tags
+		return tags
+
+	# #=======
+	# def parseKeyword(board_data):
+	# global br
+	# global db_address
+
+	# conn=pymongo.Connection(db_address,27017)
+	# db = conn[board_data['name']]
+
+	# rank_data = list(db.single.find({}, { '_id': 0}) \
+	# 					    .sort([('push.all', pymongo.DESCENDING)]) \
+	# 						.limit(50))	
+	# keywords = {}
+	# links_data = []
+
+	# for data in rank_data:
+		
+	# 	response = None
+	# 	try:
+	# 		#response = br.open('http://www.ptt.cc/bbs/Gossiping/M.1398786724.A.D29.html')
+	# 		response = br.open(data['link'])
+	# 		print data['link']
+		
+	# 		if response.geturl().find('over18') != -1:
+	# 			print 'over 18 page process'
+	# 			br.select_form(nr=0)
+	# 			response = br.submit(name='yes', label='yes')
+	# 	except:	
+	# 		response = None	
+			
+	# 	if response is None:	
+	# 		continue 
+
+	# 	#取連結
+	# 	only_link = SoupStrainer('a', href=True)
+	# 	soup = BeautifulSoup(copy.copy(response), features=features, parse_only=only_link)
+	# 	print 'contentGet start parse link'	
+	# 	for link in soup.findAll('a', href=True):
+	# 		m = re.search('http://.+', link['href'])
+	# 		if not m is None:
+
+	# 			print '-origin-:' +  link['href'].encode('utf8')
+
+	# 			contenturl = link['href'].encode('utf8')
+
+	# 			response_link = None
+	# 			try:
+	# 				response_link = br.open(contenturl, timeout=30.0)
+	# 			except:	
+	# 				response_link = None		
+
+	# 			if not response_link is None:
+	# 				link_data = {}
+	# 				print response_link.geturl()
+	# 				link_data['origin'] = contenturl
+	# 				link_data['real'] = response_link.geturl()
+
+	# 				if link_data['real'] == data['link']:
+	# 					continue
+	# 				if link_data['real'].find('http://www.ptt.cc/') != -1:
+	# 					continue
+
+	# 				title = None
+	# 				try:
+	# 					print sys.getdefaultencoding()
+	# 					print 'a'
+	# 					if isinstance(br.title(), unicode):
+	# 						print 'a-1'
+	# 						title =  br.title().encode('utf8')
+	# 					else: 
+	# 						print 'a-2'
+	# 						title =  br.title().decode(sys.getdefaultencoding()).encode('utf8')
+	# 				except:	
+	# 					try:
+	# 						print 'b'
+	# 						soup2 = BeautifulSoup(copy.copy(response_link), features=features)
+	# 						print type(soup2.title.string)
+	# 						#title = soup2.title.string.decode(sys.getdefaultencoding()).encode('utf8')
+	# 						if isinstance(soup2.title.string, unicode):
+	# 							print 'b-1'
+	# 							title = soup2.title.string.encode('utf8')
+	# 						else: 
+	# 							print 'b-2'
+	# 							title = soup2.title.string.decode(sys.getdefaultencoding()).encode('utf8')
+	# 					except:		
+	# 						print 'c'
+	# 						title = link_data['real']	
+					
+	# 				link_data['title'] = title	
+	# 				link_data['idx'] = data['push']['all']	
+	# 				link_data['from'] = data['link']
+	# 				print '>>>>>>>>>>>>>>>>>>>'
+	# 				print link_data['title'] 
+	# 				print link_data['real'] 
+	# 				print link_data['idx']
+	# 				print '<<<<<<<<<<<<<<<<<<<'
+	# 				links_data.append(link_data)
+
+	# 	#取keyword
+	# 	only_div_acticlemeta = SoupStrainer('div',  {"class":"article-metaline"})
+	# 	soup = BeautifulSoup(copy.copy(response), features=features, parse_only=only_div_acticlemeta)
+	# 	div = soup.find('div',  {"class":"bbs-screen bbs-content"})
+
+	# 	titles = soup.findAll('div',  {"class":"article-metaline"})
+	# 	[title.extract() for title in titles]
+	# 	titles2 = soup.findAll('div',  {"class":"article-metaline-right"})
+	# 	[title.extract() for title in titles2]
+	# 	pushs = soup.findAll('div',  {"class":"push"})
+	# 	[push.extract() for push in pushs]
+	# 	spans = soup.findAll('span',  {"class":"f2"})
+	# 	[span.extract() for span in spans]
+
+	# 	if not div is None:
+	# 		contenttext = ''
+	# 		for str in div.strings:
+	# 			contenttext += str
+		
+	# 		tags = jieba.analyse.extract_tags( contenttext, topK=10)
+	# 		for tag in tags:
+	# 			if tag in keywords.keys():
+	# 				keywords[tag] = keywords[tag] + 1
+	# 			else:
+	# 				keywords[tag] = 1	
+
+	# sort_dict= sorted(keywords.iteritems(), key=lambda d:d[1], reverse = True)
+	
+	# #for key in sort_dict:
+	# #	print key[0]
+
+	# for keyword_data in sort_dict:
+	# 	keyword = keyword_data[0].encode('utf8')
+	# 	count = keyword_data[1]
+	# 	findData = db.keyword.find_one({'keyword': keyword})
+	# 	if findData is None:
+	# 		db.keyword.insert({'keyword': keyword, 'count': count})
+	# 	else:
+	# 		findData['count'] = count
+	# 		db.keyword.save(findData)
+
+	# db.links.drop()
+	# for link_data in links_data:
+	# 	db.links.insert(link_data)
+		
+
+	# jsonStr = json.dumps(sort_dict, indent=4)
+	# with open("keyword.json", "w") as f:
+	# 	f.write(jsonStr) 
+	# #=======		
 
 	#當內文解析出了問題缺少資料，用清單的資料與其他資料來補
 	def _complete_context(self, context_obj, list_data):

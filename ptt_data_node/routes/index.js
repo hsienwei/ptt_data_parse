@@ -130,11 +130,21 @@ exports.links = function(req, res){
 	var mongodbServer = new mongodb.Server('localhost', 27017, { auto_reconnect: true, poolSize: 10 });
 	var db = new mongodb.Db(req.params.id, mongodbServer);
 	db.open(function() {
-		db.collection('links', function(err, collection) {
+		db.collection('single', function(err, collection) {
 			collection.find({}, {limit:100, fields:{'_id': 0}})
-					  .sort({'idx': -1})
 					  .toArray(function(err, docs) {
-							res.render('links', { list: docs});
+					  		var ary = [];
+					  		for(var i = 0; i < docs.length; ++i)
+					  		{
+					  			if(docs[i]['links'] != null)
+					  			{
+					  				for(var j = 0; j < docs[i]['links'].length; ++j)
+					  				{
+					  					ary.push(docs[i]['links'][j]);
+					  				}
+					  			}
+					  		}
+							res.render('links', { list: ary});
 							db.close();
 						});
 		});
