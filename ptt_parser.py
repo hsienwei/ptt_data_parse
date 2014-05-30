@@ -265,17 +265,24 @@ class PttWebParser	:
 			if len(links) > 0:
 				content_obj['links'] = links
 
-			fb_data = self._fb_parse(link)	
+			# fb_data = self._fb_parse(link)	
+			# content_obj['fb'] = fb_data
 
+			score = pushData['g'] * 2 + pushData['b'] + pushData['n'] #fb_data['like_count'] + fb_data['share_count'] + fb_data['comment_count'] + pushData['g'] * 2 + pushData['b'] + pushData['n']
+			content_obj['score'] = score
 			
 		return content_obj	
 
-	def _fb_parse(self, origin_link):
-		url = 'https://api.facebook.com/method/fql.query?format=json&query=select%20%20like_count,%20share_count,comment_count%20from%20link_stat%20where%20url=%22' + origin_link.string + '%22'
-		print url
-		response = self.br.open(url, timeout=30.0)
-		print response.read()
-		time.sleep(3)
+	# def _fb_parse(self, origin_link):
+	# 	#[{"like_count":1421162,"share_count":5664540,"comment_count":1748801}]
+	# 	url = 'https://api.facebook.com/method/fql.query?format=json&query=select%20%20like_count,%20share_count,comment_count%20from%20link_stat%20where%20url=%22' + origin_link.string + '%22'
+	# 	response = self.br.open(url, timeout=30.0)
+	# 	response_str = response.read()
+	# 	fb_json = json.loads(response_str)
+	# 	time.sleep(3)
+	# 	print fb_json
+	# 	return fb_json[0]
+
 
 	def _link_parse(self, response, origin_link):
 		#取連結
