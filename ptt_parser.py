@@ -17,7 +17,11 @@ import jieba.analyse
 import sys
 import tweepy
 
-
+import facebook
+import urllib
+import urlparse
+import subprocess
+import warnings
 
 
 class TwitterRecorder:
@@ -29,6 +33,8 @@ class TwitterRecorder:
 		auth = tweepy.OAuthHandler(twitter_obj['consumer_key'], twitter_obj['consumer_secret'])
 		auth.set_access_token(twitter_obj['access_token'], twitter_obj['access_token_secret'])
 		self.twitter_api = tweepy.API(auth)
+
+		
 
 	def twitter_update(self, msg):
 		if not self.twitter_api is None:
@@ -47,6 +53,21 @@ class PttWebParser	:
 			self.features = 'html5lib'
 		else:
 			self.features = 'lxml'
+
+		oauth_args = dict(client_id     = '482698495096073',
+	                  client_secret = '8c58b055fcb762a9780638dc401c85e2',
+	                  grant_type    = 'client_credentials')
+
+		oauth_curl_cmd = ['curl',
+		                  'https://graph.facebook.com/oauth/access_token?' + urllib.urlencode(oauth_args)]
+		oauth_response = subprocess.Popen(oauth_curl_cmd,
+		                                  stdout = subprocess.PIPE,
+		                                  stderr = subprocess.PIPE).communicate()[0]
+		try:
+		    oauth_access_token = urlparse.parse_qs(str(oauth_response))['access_token'][0]
+		    self.graph = facebook.GraphAPI(oauth_access_token)
+		except KeyError:
+		    print('Unable to grab an access token!')
 	
 	def context_list_parse(self, link):
 
@@ -120,11 +141,11 @@ class PttWebParser	:
 
 		return list_detail		
 
-	def context_parse(self, link):
+	def context_parse(self, content_link):
 		response = None
-		print link
+		print content_link
 		try:
-			response = self.br.open(link)
+			response = self.br.open(content_link)
 			print 'contentGet:' + response.geturl()
 
 			if response.geturl().find('over18') != -1:
@@ -209,7 +230,7 @@ class PttWebParser	:
 				m = re.search('http://.+', link['href'])
 				if not m is None:
 	
-					if link['href'] == link:
+					if link['href'] == content_link:
 						continue
 					if link['href'].find('http://www.ptt.cc/') != -1:
 						continue	
@@ -261,28 +282,46 @@ class PttWebParser	:
 			if keyword:
 				content_obj['keyword'] = keyword
 
-			links = self._link_parse(response, link)
+			links = self._link_parse(response, content_link)
 			if len(links) > 0:
 				content_obj['links'] = links
 
-			# fb_data = self._fb_parse(link)	
-			# content_obj['fb'] = fb_data
+			fb_data = self._fb_parse(content_link)	
+			content_obj['fb'] = fb_data
 
 			score = pushData['g'] * 2 + pushData['b'] + pushData['n'] #fb_data['like_count'] + fb_data['share_count'] + fb_data['comment_count'] + pushData['g'] * 2 + pushData['b'] + pushData['n']
+			if fb_data:
+				score = score + fb_data['like_count'] + fb_data['share_count'] + fb_data['comment_count']
 			content_obj['score'] = score
 			
 		return content_obj	
 
-	# def _fb_parse(self, origin_link):
-	# 	#[{"like_count":1421162,"share_count":5664540,"comment_count":1748801}]
-	# 	url = 'https://api.facebook.com/method/fql.query?format=json&query=select%20%20like_count,%20share_count,comment_count%20from%20link_stat%20where%20url=%22' + origin_link.string + '%22'
-	# 	response = self.br.open(url, timeout=30.0)
-	# 	response_str = response.read()
-	# 	fb_json = json.loads(response_str)
-	# 	time.sleep(3)
-	# 	print fb_json
-	# 	return fb_json[0]
+	def _fb_parse(self, origin_link):
+		# #[{"like_count":1421162,"share_count":5664540,"comment_count":1748801}]
+		# url = 'https://api.facebook.com/method/fql.query?format=json&query=select%20%20like_count,%20share_count,comment_count%20from%20link_stat%20where%20url=%22' + origin_link.string + '%22'
+		# response = self.br.open(url, timeout=30.0)
+		# response_str = response.read()
+		# fb_json = json.loads(response_str)
+		# time.sleep(3)
+		# print fb_json
+		# return fb_json[0]
 
+		# [{u'fql_result_set': [{u'normalized_url': u'http://www.yahoo.com/', u'commentsbox_count': 4690, u'click_count': 0, u'url': u'http://www.yahoo.com', u'total_count': 259986, u'comment_count': 34555, u'like_count': 73902, u'comments_fbid': 386757221287, u'share_count': 151529}], u'name': u'example'}]
+		fb_data = {}
+		if  self.graph : #graph.fql({'example':"SELECT url,normalized_url,share_count,like_count,comment_count,total_count,commentsbox_count,comments_fbid,click_count FROM link_stat WHERE url=\'" + link+ "\'"})
+			fql_str = "SELECT url,normalized_url,share_count,like_count,comment_count,total_count,commentsbox_count,comments_fbid,click_count FROM link_stat WHERE url=\'" + origin_link+ "\'"
+			# fql_results = self.graph.fql({'example':"SELECT url,normalized_url,share_count,like_count,comment_count,total_count,commentsbox_count,comments_fbid,click_count FROM link_stat WHERE url='http://www.ptt.cc/bbs/sex/M.1401765380.A.52C.html'"})
+			fql_results = self.graph.fql({'example': str(fql_str)})
+			print fql_str
+			print "<<<<<<<<"
+			print fql_results
+			for result in fql_results:
+				if result['name'] == 'example':
+					fb_data['share_count'] = result['fql_result_set'][0]['share_count']
+					fb_data['like_count'] = result['fql_result_set'][0]['like_count']
+					fb_data['comment_count'] = result['fql_result_set'][0]['comment_count']
+		print fb_data		
+		return fb_data
 
 	def _link_parse(self, response, origin_link):
 		#取連結
