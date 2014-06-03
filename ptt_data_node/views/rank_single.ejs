@@ -12,7 +12,7 @@ function initList() {%>
    <% for(var i=0; i < data.length; ++i) {%>
    <li>
     <div><%=i+1%> <a href='<%= data[i]['link'] %>'><%= data[i]['title'] %></a>  <br>
-    推 = <%=data[i]['push']['g']%>, 噓 = <%=data[i]['push']['b']%>, 總和 = <%=data[i]['push']['all']%></div>
+    <%=data[i]['score']%>  推 = <%=data[i]['push']['g']%>, 噓 = <%=data[i]['push']['b']%>, 總和 = <%=data[i]['push']['all']%></div>
     </li>
     
   <%}%>
@@ -32,7 +32,7 @@ function initList() {%>
 		var html = ''
 		for(var i=0; i < data.length; ++i) {
   		  	html += "<li><div><p> " + (listShowIdx *10 +i+1) + " <a href='" + data[i]['link'] + "' target='_blank'>" + data[i]['title']  + "</a>  <br>" + 
-   		 			"推 = " + data[i]['push']['g'] + ", 噓 = " + data[i]['push']['b'] + ", 總和 = " + data[i]['push']['all']  + "</p></div></li>";
+   		 			data[i]['score']  + " 推 = " + data[i]['push']['g'] + ", 噓 = " + data[i]['push']['b'] + ", 總和 = " + data[i]['push']['all']  + " fb_like = " + data[i]['fb']['like_count'] + ", fb_comment = " + data[i]['fb']['comment_count'] + ", fb_share = " + data[i]['fb']['share_count']  + "</p></div></li>";
     }
  	  return html;
 	}

@@ -22,6 +22,7 @@ import urllib
 import urlparse
 import subprocess
 import warnings
+import subprocess
 
 
 class TwitterRecorder:
@@ -63,6 +64,8 @@ class PttWebParser	:
 		oauth_response = subprocess.Popen(oauth_curl_cmd,
 		                                  stdout = subprocess.PIPE,
 		                                  stderr = subprocess.PIPE).communicate()[0]
+		print oauth_curl_cmd
+		print str(oauth_response)
 		try:
 		    oauth_access_token = urlparse.parse_qs(str(oauth_response))['access_token'][0]
 		    self.graph = facebook.GraphAPI(oauth_access_token)

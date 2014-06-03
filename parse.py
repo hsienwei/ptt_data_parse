@@ -16,16 +16,16 @@ def update_board_list(list):
 		db.board_list.insert({'board':board_name})
 
 def update_board_data():
-	board_list = ['Gossiping', 'beauty', 'joke', 'StupidClown', 'sex']
+	board_list = ['Gossiping', 'beauty', 'joke', 'StupidClown', 'sex', 'PublicIssue', 'HatePolitics']
 
 	parser = ptt_parser.PttWebParser()
-	# parser.board_parse('Gossiping', 24)
-	# parser.board_parse('beauty', 24)
-	# parser.board_parse('joke', 24)
-	# parser.board_parse('StupidClown', 24)
-	parser.board_parse('sex', 24)
-	parser.board_parse('PublicIssue', 24)
-	parser.board_parse('HatePolitics', 24)
+	parser.board_parse('Gossiping', 24)
+	parser.board_parse('beauty', 72)
+	parser.board_parse('joke', 72)
+	parser.board_parse('StupidClown', 72)
+	parser.board_parse('sex', 72)
+	parser.board_parse('PublicIssue', 72)
+	parser.board_parse('HatePolitics', 72)
 	update_board_list(board_list)		
 
 def fb_test():

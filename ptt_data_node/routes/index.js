@@ -166,12 +166,13 @@ exports.singleRankGet = function(req, res)
 		db.collection('single', function(err, collection) {
 			var cursor = collection.find({'time':{"$gte":rangeDay}}, {skip: (req.body.pageIdx * 10), limit:10, fields:{}})
 			var sort_cursor;
-			if(req.body.sort == 'g')		
-				sort_cursor = cursor.sort({ 'extra_push_point.g': -1})
-			else if(req.body.sort == 'b')		
-				sort_cursor = cursor.sort({ 'extra_push_point.b': -1})	  
-			else 
-				sort_cursor = cursor.sort({ 'extra_push_point.all': -1})
+			// if(req.body.sort == 'g')		
+			// 	sort_cursor = cursor.sort({ 'extra_push_point.g': -1})
+			// else if(req.body.sort == 'b')		
+			// 	sort_cursor = cursor.sort({ 'extra_push_point.b': -1})	  
+			// else 
+			// 	sort_cursor = cursor.sort({ 'extra_push_point.all': -1})
+			sort_cursor = cursor.sort({ 'score': -1})
 			sort_cursor.toArray(function(err, docs) {
             	res.send(docs);
     			db.close();
