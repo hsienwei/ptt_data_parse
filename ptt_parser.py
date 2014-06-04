@@ -605,6 +605,8 @@ class PttWebParser	:
 			print 'add to db'
 		else:
 			findDoc['push'] = context_obj['push']
+			findDoc['fb'] = context_obj['fb']
+			findDoc['score'] = context_obj['score']
 			db.single.save(findDoc)				
 			print 'change db'		
 	def _context_to_group_db(self, db, context_obj):
