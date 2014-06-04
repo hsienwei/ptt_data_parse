@@ -39,11 +39,11 @@ app.get('/', function (req, res) {
 
 app.get('/rank/:id', routes.rank);
 app.get('/rank/:id/single', routes.rank_single);
-app.get('/rank/:id/single/:sort_type', routes.rank_single);
+// app.get('/rank/:id/single/:sort_type', routes.rank_single);
 //app.get('/rank/:id/single/:sort_type/:num', routes.rank_single_num);
 app.get('/rank/:id/group', routes.rank_group);
-app.get('/rank/:id/group/:sort_type', routes.rank_group);
-app.get('/rank/:id/group/:sort_type/:num', routes.rank_group_num);
+// app.get('/rank/:id/group/:sort_type', routes.rank_group);
+// app.get('/rank/:id/group/:sort_type/:num', routes.rank_group_num);
 app.get('/grouplist/:id/:title', routes.grouplist);
 
 app.get('/board_select/:act', routes.board_select);

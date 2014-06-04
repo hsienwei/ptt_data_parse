@@ -54,30 +54,35 @@ exports.rank_single = function(req, res){
 	res.render('rank_single', { board:req.params.id, sort:sortType});
 };
 
-exports.rank_group = function(req, res){
-	console.log(req.params.sort_type);
-	if (req.params.sort_type == null)
-		res.redirect('/rank/' + req.params.id + '/group/g/10');
-	else	
-		res.redirect('/rank/' + req.params.id + '/group/' + req.params.sort_type + '/10');
-};
+// exports.rank_group = function(req, res){
+// 	console.log(req.params.sort_type);
+// 	if (req.params.sort_type == null)
+// 		res.redirect('/rank/' + req.params.id + '/group/g/10');
+// 	else	
+// 		res.redirect('/rank/' + req.params.id + '/group/' + req.params.sort_type + '/10');
+// };
 
-exports.rank_group_num = function(req, res){
+exports.rank_group = function(req, res){
+	console.log('a');
+
 	var mongodbServer = new mongodb.Server('localhost', 27017, { auto_reconnect: true, poolSize: 10 });
 	var db = new mongodb.Db(req.params.id, mongodbServer);
 	db.open(function() {
+		console.log('b');
 		rangeDay = Date.now()/1000 - 60 * 60 * 24 * 5 
 		db.collection('group', function(err, collection) {
-			
-			var cursor = collection.find({'time':{"$gte":rangeDay}}, {limit:req.params.num, fields:{}})
+			console.log('c');
+			var cursor = collection.find({'time':{"$gte":rangeDay}}, {limit:100, fields:{}})
 			var sort_cursor;
-			if(req.params.sort_type == 'g')		
-				sort_cursor = cursor.sort({ 'extra_push_point.g': -1})
-			else if(req.params.sort_type == 'b')		
-				sort_cursor = cursor.sort({ 'extra_push_point.b': -1})	  
-			else 
-				sort_cursor = cursor.sort({ 'extra_push_point.all': -1})
+			// if(req.params.sort_type == 'g')		
+			// 	sort_cursor = cursor.sort({ 'extra_push_point.g': -1})
+			// else if(req.params.sort_type == 'b')		
+			// 	sort_cursor = cursor.sort({ 'extra_push_point.b': -1})	  
+			// else 
+			// 	sort_cursor = cursor.sort({ 'extra_push_point.all': -1})
+			sort_cursor = cursor.sort({ 'score': -1})
 			sort_cursor.toArray(function(err, docs) {
+				console.log('d');
             	res.render('rank_group', { rank: docs, board_id:req.params.id});
     			db.close();
         	});

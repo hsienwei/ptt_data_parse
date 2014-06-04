@@ -6,7 +6,7 @@ function groupHtml(data) {
     for(var i=0; i < data.length; ++i) {
       %>
     <p><a href='/grouplist/<%=board_id%>/<%= data[i]['_id'] %>'><%= data[i]['key'] %></a>  </p>
-    <p>推 = <%=data[i]['push']['g']%>, 噓 = <%=data[i]['push']['b']%>, 總和 = <%=data[i]['push']['all']%></p>
+    <p>score <%=data[i]['score']%></p>
   <%}
 } %>
 

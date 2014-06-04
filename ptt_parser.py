@@ -624,19 +624,27 @@ class PttWebParser	:
 			group_data['key'] 		= group_key_str
 			group_data['groupList'] = [context_id]
 			group_data['time'] 		= time.time()
+			score = 0
+			for rec in db.single.find({"id":{"$in":group_data['groupList']}}):
+				if 'score' in rec:
+					score += rec['score']
+			group_data['score'] = score	
 			db.group.insert(group_data)
 		else:
 			if not context_id in find_group['groupList']:
 				find_group['groupList'].append(context_id)
 				find_group['time'] = time.time()
 					
-			pushData = { 'g': 0, 'b': 0, 'n': 0, 'all': 0 }	
+			# pushData = { 'g': 0, 'b': 0, 'n': 0, 'all': 0 }	
+			score = 0
 			for rec in db.single.find({"id":{"$in":find_group['groupList']}}):
-				pushData['g'] += rec['push']['g']
-				pushData['n'] += rec['push']['n']
-				pushData['b'] += rec['push']['b']
-			pushData['all'] = pushData['g'] + pushData['n'] + pushData['b']
-			find_group['push'] = pushData
+				if 'score' in rec:
+					score += rec['score']
+				# pushData['g'] += rec['push']['g']
+				# pushData['n'] += rec['push']['n']
+				# pushData['b'] += rec['push']['b']
+			# pushData['all'] = pushData['g'] + pushData['n'] + pushData['b']
+			find_group['score'] = score
 			db.group.save(find_group)	
 
 	def board_parse(self, board_name, time_range):
