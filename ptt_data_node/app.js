@@ -49,6 +49,7 @@ app.get('/grouplist/:id/:title', routes.grouplist);
 app.get('/board_select/:act', routes.board_select);
 
 app.post('/singleRankGet', routes.singleRankGet)
+app.post('/groupRankGet', routes.groupRankGet)
 
 app.get('/links/:id', routes.links);
 //app.get('/users', user.list);

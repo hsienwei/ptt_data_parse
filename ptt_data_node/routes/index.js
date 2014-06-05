@@ -63,31 +63,37 @@ exports.rank_single = function(req, res){
 // };
 
 exports.rank_group = function(req, res){
-	console.log('a');
 
-	var mongodbServer = new mongodb.Server('localhost', 27017, { auto_reconnect: true, poolSize: 10 });
-	var db = new mongodb.Db(req.params.id, mongodbServer);
-	db.open(function() {
-		console.log('b');
-		rangeDay = Date.now()/1000 - 60 * 60 * 24 * 5 
-		db.collection('group', function(err, collection) {
-			console.log('c');
-			var cursor = collection.find({'time':{"$gte":rangeDay}}, {limit:100, fields:{}})
-			var sort_cursor;
-			// if(req.params.sort_type == 'g')		
-			// 	sort_cursor = cursor.sort({ 'extra_push_point.g': -1})
-			// else if(req.params.sort_type == 'b')		
-			// 	sort_cursor = cursor.sort({ 'extra_push_point.b': -1})	  
-			// else 
-			// 	sort_cursor = cursor.sort({ 'extra_push_point.all': -1})
-			sort_cursor = cursor.sort({ 'score': -1})
-			sort_cursor.toArray(function(err, docs) {
-				console.log('d');
-            	res.render('rank_group', { rank: docs, board_id:req.params.id});
-    			db.close();
-        	});
-		});
-	});
+	var sortType = req.params.sort_type;
+	if(sortType == null)    req.params.sort_type = 'g';
+
+	res.render('rank_group', { board:req.params.id, sort:sortType});
+
+	// console.log('a');
+
+	// var mongodbServer = new mongodb.Server('localhost', 27017, { auto_reconnect: true, poolSize: 10 });
+	// var db = new mongodb.Db(req.params.id, mongodbServer);
+	// db.open(function() {
+	// 	console.log('b');
+	// 	rangeDay = Date.now()/1000 - 60 * 60 * 24 * 5 
+	// 	db.collection('group', function(err, collection) {
+	// 		console.log('c');
+	// 		var cursor = collection.find({'time':{"$gte":rangeDay}}, {limit:100, fields:{}})
+	// 		var sort_cursor;
+	// 		// if(req.params.sort_type == 'g')		
+	// 		// 	sort_cursor = cursor.sort({ 'extra_push_point.g': -1})
+	// 		// else if(req.params.sort_type == 'b')		
+	// 		// 	sort_cursor = cursor.sort({ 'extra_push_point.b': -1})	  
+	// 		// else 
+	// 		// 	sort_cursor = cursor.sort({ 'extra_push_point.all': -1})
+	// 		sort_cursor = cursor.sort({ 'score': -1})
+	// 		sort_cursor.toArray(function(err, docs) {
+	// 			console.log('d');
+ //            	res.render('rank_group', { rank: docs, board_id:req.params.id});
+ //    			db.close();
+ //        	});
+	// 	});
+	// });
 };
 
 
@@ -179,6 +185,36 @@ exports.singleRankGet = function(req, res)
 			// 	sort_cursor = cursor.sort({ 'extra_push_point.all': -1})
 			sort_cursor = cursor.sort({ 'score': -1})
 			sort_cursor.toArray(function(err, docs) {
+            	res.send(docs);
+    			db.close();
+        	});
+		});
+	});
+
+}
+
+exports.groupRankGet = function(req, res)
+{
+	console.log(req.body.pageIdx);
+	console.log(req.body.board);
+	console.log(req.body.sort);
+
+	var mongodbServer = new mongodb.Server('localhost', 27017, { auto_reconnect: true, poolSize: 10 });
+	var db = new mongodb.Db(req.body.board, mongodbServer);
+	db.open(function() {
+		rangeDay = Date.now()/1000 - 60 * 60 * 24 * 5 
+		db.collection('group', function(err, collection) {
+			var cursor = collection.find({'time':{"$gte":rangeDay}}, {skip: (req.body.pageIdx * 10), limit:10, fields:{}})
+			var sort_cursor;
+			// if(req.body.sort == 'g')		
+			// 	sort_cursor = cursor.sort({ 'extra_push_point.g': -1})
+			// else if(req.body.sort == 'b')		
+			// 	sort_cursor = cursor.sort({ 'extra_push_point.b': -1})	  
+			// else 
+			// 	sort_cursor = cursor.sort({ 'extra_push_point.all': -1})
+			sort_cursor = cursor.sort({ 'score': -1})
+			sort_cursor.toArray(function(err, docs) {
+				console.log(docs);
             	res.send(docs);
     			db.close();
         	});
