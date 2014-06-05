@@ -142,7 +142,8 @@ exports.links = function(req, res){
 	var db = new mongodb.Db(req.params.id, mongodbServer);
 	db.open(function() {
 		db.collection('single', function(err, collection) {
-			collection.find({}, {limit:100, fields:{'_id': 0}})
+			collection.find({links:{ $exists: true}}, {limit:100, fields:{'_id': 0}})
+					  .sort({'time': -1})
 					  .toArray(function(err, docs) {
 					  		var ary = [];
 					  		for(var i = 0; i < docs.length; ++i)
@@ -155,14 +156,80 @@ exports.links = function(req, res){
 					  				}
 					  			}
 					  		}
-							res.render('links', { list: ary});
+					  		var data = link_process(ary);
+							res.render('links', { list: ary, data:data});
 							db.close();
 						});
 		});
 	});
 };
 
+function link_process(data)
+{
+	var a = ['nownews.com',
+			 'wikimedia.org',
+			 'wikipedia.org',
+			 'facebook.com',
+			 'appledaily.com.tw',
+			 'chinatimes.com',
+			 'ettoday.net',
+			 'youtube.com',
+			 'imgur.com',
+			 'news.yahoo.com',
+			 'yam.com',
+			 'ltn.com.tw',
+			 'peoplenews.tw',
+			 'udn.com',
+			 'peopo.org',
+			 'cw.com.tw',
+			 'newtalk.tw'];
+	var b = ['nownews.com',
+			 '維基百科',
+			 '維基百科',
+			 'facebook.com',
+			 '蘋果日報',
+			 '中時電子報',
+			 '東森新聞雲',
+			 'youtube',
+			 'imgur',
+			 'Yahoo奇摩新聞',
+			 'yam蕃薯藤新聞',
+			 '自由時報',
+			 '民報',
+			 '聯合新聞網',
+			 '公民新聞',
+			 '天下雜誌',
+			 '新頭殼'];	
 
+	var ary = {};
+
+	for(var i=0; i< data.length; ++i)
+	{
+		var link = data[i]['real'];
+		var isFind = false;
+		for(var j=0; j< a.length; ++j)
+		{
+			
+			if(link.search(a[j]) != -1)
+			{
+				if(b[j] in ary)
+					ary[b[j]] += 1;
+				else
+					ary[b[j]] = 1;
+				isFind = true;
+			}
+		}
+		if(!isFind)
+		{
+			if('其他' in ary)
+				ary['其他'] += 1;
+			else
+				ary['其他'] = 1;
+		}
+	}
+	console.log(ary);
+	return ary;
+}
 
 exports.singleRankGet = function(req, res)
 {

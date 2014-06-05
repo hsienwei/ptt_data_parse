@@ -397,7 +397,14 @@ class PttWebParser	:
 							pre_word = pre_word +  'c '
 							title = pre_word + link_data['real']	
 						'''	
-						title = link_data['real']	
+						try:
+							soup2 = BeautifulSoup(response_link.read().decode('utf-8', 'ignore'), features=self.features)
+							if isinstance(soup2.title.string, unicode):
+								title = soup2.title.string
+							else: 	
+								title = pre_word + soup2.title.string.decode(sys.getdefaultencoding()).encode('utf8')
+						except:				
+							title = link_data['real']	
 
 					link_data['title'] = title	
 					link_ary.append(link_data)
