@@ -1,18 +1,58 @@
 
+<%
+function initList() {%>
+	<ul class='list' data-role="listview" data-inset="true"></ul> 
+	<a id='more' onclick="loadMore()" href="javascript:void(0);" class="ui-btn ui-mini">more</a>
+<%}
+%>
 
-<%  
+<script>
+	var board = '<%=board%>'
+  	var sort = '<%=sort%>'
+	var listShowIdx = 0;
 
-function groupHtml(data) {
-    for(var i=0; i < data.length; ++i) {
-      %>
-    <p><a href='/grouplist/<%=board_id%>/<%= data[i]['_id'] %>'><%= data[i]['key'] %></a>  </p>
-    <p>score <%=data[i]['score']%></p>
-  <%}
-} %>
+	function dataToList(data)
+	{
+		var html = ''
+		for(var i=0; i < data.length; ++i) {
+  		  	html += "<li><div><p> " + (listShowIdx *10 +i+1) + " <a href='/grouplist/"+ board + "/" + data[i]['_id'] + "' target='_blank'>			" + data[i]['key']  + "</a>" 
+  		  	if(data[i]['score'] != null)
+  		  	{
+  		  		html += "<br>" + data[i]['score']  
+  		  	}
+   		 	html += "</p></div></li>";
+    	}
+ 	  return html;
+	}
 
+    function loadMore()
+    {
+    	$.ajax({
+      		url: "/groupRankGet",
+      		type: "POST",
+      		data: { pageIdx: listShowIdx, board:board, sort:sort}
+    	})
+      .done(function( data ) {
+      	$('ul.list').append(dataToList(data));
+    	  $('ul.list').listview('refresh');
+    	  
+      	if(data == null || data.length < 10)    
+      		$('#more').hide();
+        else
+          listShowIdx++;
+      });
+    }
 
-<h1>群組排行</h1>
-<div>
-<% groupHtml(rank) %>
+    $(document).ready(function ()
+    {
+    	listShowIdx = 0;
+    	loadMore();
+    });
+
+</script>
+
+<div >
+	<h1>群組排行</h1>
+	<% initList() %>
 
 </div>
