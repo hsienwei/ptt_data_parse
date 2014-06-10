@@ -1,6 +1,6 @@
 
 <script src="/js/Chart.min.js"></script>
-<canvas id="myChart" width="600" height="400"></canvas>
+<canvas id="myChart" width="800" height="400"></canvas>
 
 <script>
 var data = {
@@ -8,7 +8,8 @@ var data = {
 	var label = '';
 	for(var key in data)
 	{
-		label +=  '"' + key + '",';
+		if(data[key]['kind'] == 1)
+			label +=  '"' + key +'_'+ data[key]['count'] + '",';
 	}
 	%>
 	labels : [<%-label%>],
@@ -20,7 +21,8 @@ var data = {
 			var value = '';
 			for(var key in data)
 			{
-				value +=  data[key]['count'] + ', ';
+				if(data[key]['kind'] == 1)
+					value +=  data[key]['count'] + ', ';
 			}
 			%>
 			data : [<%-value%>]

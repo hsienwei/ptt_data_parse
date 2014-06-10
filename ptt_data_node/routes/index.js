@@ -142,7 +142,7 @@ exports.links = function(req, res){
 	var db = new mongodb.Db(req.params.id, mongodbServer);
 	db.open(function() {
 		db.collection('single', function(err, collection) {
-			collection.find({links:{ $exists: true}}, {limit:100, fields:{'_id': 0}})
+			collection.find({links:{ $exists: true}}, {limit:1000, fields:{'_id': 0}})
 					  .sort({'time': -1})
 					  .toArray(function(err, docs) {
 					  		var ary = [];
@@ -166,6 +166,26 @@ exports.links = function(req, res){
 
 function link_process(data)
 {
+	var result = []
+
+	for(var idx in  data)
+	{	
+		var obj = data[idx];
+		console.log(obj);
+		var isFind = false;
+		for(var r_idx in result)
+		{
+			var r_obj = result[r_idx];
+			if(r_obj['real'] == obj['real'])
+			{
+				isFind = true;
+			}
+		}
+		if(!isFind)
+			result.push(obj);
+	}
+
+	console.log(result);
 	var a = ['nownews.com',
 			 'wikimedia.org',
 			 'wikipedia.org',
@@ -190,7 +210,10 @@ function link_process(data)
 			 'cna.com.tw',
 			 'ntdtv.com',
 			 'nextmag.com.tw',
-			 'hk.apple.nextmedia.com'];
+			 'hk.apple.nextmedia.com',
+			 'bbc.co.uk',
+			 'rti.org.tw',
+			 'epochtimes.com'];
 
 	var b = ['nownews.com',
 			 '維基百科',
@@ -216,13 +239,45 @@ function link_process(data)
 			 '中央社',
 			 '新唐人電視台',
 			 '壹週刊',
-			 '蘋果日報(香港)'];	
+			 '蘋果日報(香港)',
+			 'BBC中文網(簡體)',
+			 '中央廣播電台',
+			 '大紀元'];	
+
+	var c = [1,	//news
+			 2,
+			 2,	//social
+			 2, 
+			 1,
+			 1,
+			 1,
+			 2,
+			 2,
+			 1,
+			 1,
+			 1,
+			 1,
+			 1,
+			 1,
+			 1,
+			 1,
+			 1,
+			 2,
+			 1,
+			 1,
+			 1,
+			 1,
+			 1,
+			 1,
+			 1,
+			 1,
+			 1];		 
 
 	var ary = {};
 
-	for(var i=0; i< data.length; ++i)
+	for(var i=0; i< result.length; ++i)
 	{
-		var link = data[i]['real'];
+		var link = result[i]['real'];
 		var isFind = false;
 		for(var j=0; j< a.length; ++j)
 		{
@@ -236,6 +291,7 @@ function link_process(data)
 				else
 				{
 					ary[b[j]] = {}
+					ary[b[j]]['kind'] = c[j];
 					ary[b[j]]['count'] = 1;
 					ary[b[j]]['data'] = [];
 				}
@@ -253,6 +309,7 @@ function link_process(data)
 			else
 			{
 				ary['其他'] = {}
+				ary['其他']['kind'] = 0;
 				ary['其他']['count'] = 1;
 				ary['其他']['data'] = [];
 			}
