@@ -1,5 +1,37 @@
 
-<%=JSON.stringify(data)%>
+<script src="/js/Chart.min.js"></script>
+<canvas id="myChart" width="600" height="400"></canvas>
+
+<script>
+var data = {
+	<%  
+	var label = '';
+	for(var key in data)
+	{
+		label +=  '"' + key + '",';
+	}
+	%>
+	labels : [<%-label%>],
+	datasets : [
+		{
+			fillColor : "rgba(220,220,220,0.5)",
+			strokeColor : "rgba(220,220,220,1)",
+			<%  
+			var value = '';
+			for(var key in data)
+			{
+				value +=  data[key]['count'] + ', ';
+			}
+			%>
+			data : [<%-value%>]
+		},
+	]
+}
+var ctx = document.getElementById("myChart").getContext("2d");
+var myNewChart = new Chart(ctx).Bar(data);
+</script>
+
+<%=JSON.stringify(data, null, "\t")%>
 <div>
   <%for(var i=0; i < list.length; ++i) {%>
     <p><a href='<%= list[i]['real']%>'><%= list[i]['title'] %></a> </p>

@@ -182,7 +182,16 @@ function link_process(data)
 			 'udn.com',
 			 'peopo.org',
 			 'cw.com.tw',
-			 'newtalk.tw'];
+			 'newtalk.tw',
+			 'tvbs.com.tw',
+			 'ppt.cc',
+			 'cts.com.tw',
+			 'ttv.com.tw',
+			 'cna.com.tw',
+			 'ntdtv.com',
+			 'nextmag.com.tw',
+			 'hk.apple.nextmedia.com'];
+
 	var b = ['nownews.com',
 			 '維基百科',
 			 '維基百科',
@@ -199,7 +208,15 @@ function link_process(data)
 			 '聯合新聞網',
 			 '公民新聞',
 			 '天下雜誌',
-			 '新頭殼'];	
+			 '新頭殼',
+			 'TVBS',
+			 'ppt.cc',
+			 '華視',
+			 '台視',
+			 '中央社',
+			 '新唐人電視台',
+			 '壹週刊',
+			 '蘋果日報(香港)'];	
 
 	var ary = {};
 
@@ -213,18 +230,33 @@ function link_process(data)
 			if(link.search(a[j]) != -1)
 			{
 				if(b[j] in ary)
-					ary[b[j]] += 1;
+				{
+					ary[b[j]]['count'] += 1;
+				}
 				else
-					ary[b[j]] = 1;
+				{
+					ary[b[j]] = {}
+					ary[b[j]]['count'] = 1;
+					ary[b[j]]['data'] = [];
+				}
+				ary[b[j]]['data'].push(link);
 				isFind = true;
 			}
 		}
 		if(!isFind)
 		{
 			if('其他' in ary)
-				ary['其他'] += 1;
+			{
+				
+				ary['其他']['count'] += 1;
+			}
 			else
-				ary['其他'] = 1;
+			{
+				ary['其他'] = {}
+				ary['其他']['count'] = 1;
+				ary['其他']['data'] = [];
+			}
+			ary['其他']['data'].push(link);
 		}
 	}
 	console.log(ary);
