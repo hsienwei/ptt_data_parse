@@ -16,6 +16,7 @@ import jieba
 import jieba.analyse
 import sys
 import tweepy
+import shutil
 
 import facebook
 import urllib
@@ -71,6 +72,50 @@ class PttWebParser	:
 		    self.graph = facebook.GraphAPI(oauth_access_token)
 		except KeyError:
 		    print('Unable to grab an access token!')
+
+		self._pre_dict_combine('combine_dict.txt')
+		jieba.set_dictionary('combine_dict.txt')
+	
+	def _pre_dict_combine(self, combine_file_path):
+		origin_file = 'dict.txt.big'
+		customize_file = 'dict.txt'
+		origin_data = {}
+		customize_data = {}
+		add_data = {}
+		with open(origin_file, 'r') as fo:
+			for line in fo.readlines(): 
+				list = line.split(' ')
+				data = {}
+				if list[0]:
+					data['key'] = list[0]
+				if list[1]:
+					data['feq'] = list[1]
+				if list[2]:
+					data['type'] = list[2]		
+				origin_data[list[0]] = data
+
+		with open(customize_file, 'r') as fc:
+			for line in fc.readlines(): 
+				list = line.split(' ')
+				data = {}
+				if list[0]:
+					data['key'] = list[0]
+				if list[1]:
+					data['feq'] = list[1]
+				if list[2]:
+					data['type'] = list[2]		
+				customize_data[list[0]] = data
+		#print customize_data
+		for key in customize_data:
+			if not key in origin_data:
+				add_data[key] = customize_data[key]
+
+		shutil.copyfile(origin_file, combine_file_path)
+		with open(combine_file_path, 'a') as f:
+			for key in add_data:
+				data = add_data[key]
+				f.write(data['key'] + ' ' + data['feq'] + ' ' + data['type'])
+		#print add_data		
 	
 	def context_list_parse(self, link):
 
@@ -260,15 +305,18 @@ class PttWebParser	:
 				print 'contentGet parse time'
 				metaDivTag = metaDiv.find('span',  {"class":"article-meta-tag"})
 				metaDivValue = metaDiv.find('span',  {"class":"article-meta-value"})
-				if metaDivTag.string.encode('utf8').find('時間') != -1:
-					print metaDivValue.string
-					print parser.parse(metaDivValue.string)
-					#object['time'] = parser.parse(metaDivValue.string).strftime("%Y-%m-%d %H:%M:%S")
-					#contextTime = time.mktime(time.strptime(object['time'], '%Y-%m-%d %H:%M:%S'))
-					parsedTimeStr = parser.parse(metaDivValue.string).strftime("%Y-%m-%d %H:%M:%S")
-					contextTime = time.mktime(time.strptime(parsedTimeStr, '%Y-%m-%d %H:%M:%S'))
-					#object['time'] = contextTime
-					content_obj['time'] = contextTime
+				try:
+					if metaDivTag.string.encode('utf8').find('時間') != -1:
+						print metaDivValue.string
+						print parser.parse(metaDivValue.string)
+						#object['time'] = parser.parse(metaDivValue.string).strftime("%Y-%m-%d %H:%M:%S")
+						#contextTime = time.mktime(time.strptime(object['time'], '%Y-%m-%d %H:%M:%S'))
+						parsedTimeStr = parser.parse(metaDivValue.string).strftime("%Y-%m-%d %H:%M:%S")
+						contextTime = time.mktime(time.strptime(parsedTimeStr, '%Y-%m-%d %H:%M:%S'))
+						#object['time'] = contextTime
+						content_obj['time'] = contextTime
+				except:
+					print 'time format error'	
 	
 					# print contextTime
 					# print endTime
@@ -333,7 +381,7 @@ class PttWebParser	:
 		print 'contentGet start parse link'	
 		link_ary = []
 		for link in soup.findAll('a', href=True):
-			m = re.search('http://.+', link['href'])
+			m = re.search('http[s]?://.+', link['href'])
 			if not m is None:
 
 				print '-origin-:' +  link['href'].encode('utf8')
@@ -354,7 +402,8 @@ class PttWebParser	:
 
 					if link_data['real'] == origin_link:
 						continue
-					if link_data['real'].find('http://www.ptt.cc/') != -1:
+					m = re.search('http[s]?://www.ptt.cc/.+', link_data['real'])
+					if not m is None:
 						continue
 
 					title = None
@@ -412,8 +461,8 @@ class PttWebParser	:
 
 	def _keyword_parse(self, response):
 		#取keyword
-		only_div_acticlemeta = SoupStrainer('div',  {"class":"article-metaline"})
-		soup = BeautifulSoup(copy.copy(response), features=self.features, parse_only=only_div_acticlemeta)
+		#only_div_acticlemeta = SoupStrainer('div',  {"class":"article-metaline"})
+		soup = BeautifulSoup(copy.copy(response), features=self.features)
 		div = soup.find('div',  {"class":"bbs-screen bbs-content"})
 
 		titles = soup.findAll('div',  {"class":"article-metaline"})
@@ -424,16 +473,21 @@ class PttWebParser	:
 		[push.extract() for push in pushs]
 		spans = soup.findAll('span',  {"class":"f2"})
 		[span.extract() for span in spans]
-
+		richcontents = soup.findAll('div',  {"class":"richcontent"})
+		[richcontent.extract() for richcontent in richcontents]
+		print '================'
 		tags = None
+		print div
 		if not div is None:
 			contenttext = ''
 			for str in div.strings:
 				contenttext += str
 		
-			tags = jieba.analyse.extract_tags( contenttext, topK=10)		
+			tags = jieba.analyse.extract_tags( contenttext, topK=30)		
 			print tags
+		print '================'	
 		return tags
+		
 
 	# #=======
 	# def parseKeyword(board_data):
@@ -612,6 +666,7 @@ class PttWebParser	:
 			print 'add to db'
 		else:
 			findDoc['push'] = context_obj['push']
+			findDoc['keyword'] = context_obj['keyword']
 			findDoc['fb'] = context_obj['fb']
 			findDoc['score'] = context_obj['score']
 			db.single.save(findDoc)				
@@ -689,6 +744,7 @@ class PttWebParser	:
 		# 	formProcess2(listLink)#HatePolitics
 
 		flag_stop = False
+		conn=pymongo.MongoClient(self.db_address, 27017, max_pool_size=10)
 		while not list_link is None:
 			context_list_obj = self.context_list_parse(list_link)
 			for context_list in context_list_obj['context_list']:
@@ -698,19 +754,20 @@ class PttWebParser	:
 				 	
 					#save to db
 					#conn=pymongo.Connection('54.251.147.205',27017)
-					conn=pymongo.Connection(self.db_address, 27017)
+					
 					db = conn[board_name]#conn['Gossiping']
 					self._context_to_single_db(db, context_obj)
 					self._context_to_group_db(db, context_obj)
 					#如果超過指定時間結束
 					if context_obj['time'] < endTime:
 						flag_stop = True
+					
 			if flag_stop:
 				list_link = None
 			else:
 				list_link = 	context_list_obj['next_list']
 			print 	list_link
-			
+		conn.disconnect()	
 	
 		# #print
 		# for key in linkData.keys():

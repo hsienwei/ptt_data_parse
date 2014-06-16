@@ -8,7 +8,8 @@ import subprocess
 import warnings
 
 def update_board_list(list):
-	conn=pymongo.Connection('127.0.0.1',27017)
+	# conn=pymongo.Connection('127.0.0.1',27017)
+	conn=pymongo.Connection('54.251.147.205',27017)
 
 	db = conn['setting']
 	db.board_list.drop()
@@ -19,13 +20,13 @@ def update_board_data():
 	board_list = ['Gossiping', 'Beauty', 'joke', 'StupidClown', 'sex', 'PublicIssue', 'HatePolitics']
 
 	parser = ptt_parser.PttWebParser()
-	parser.board_parse('Gossiping', 24)
-	parser.board_parse('Beauty', 72)
-	parser.board_parse('joke', 72)
-	parser.board_parse('StupidClown', 72)
-	parser.board_parse('sex', 72)
-	parser.board_parse('PublicIssue', 72)
-	parser.board_parse('HatePolitics', 72)
+	parser.board_parse('Gossiping', 1)
+	parser.board_parse('Beauty', 1)
+	parser.board_parse('joke', 1)
+	parser.board_parse('StupidClown', 1)
+	parser.board_parse('sex', 1)
+	parser.board_parse('PublicIssue', 1)
+	parser.board_parse('HatePolitics', 1)
 	update_board_list(board_list)		
 
 def fb_test():

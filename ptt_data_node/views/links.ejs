@@ -33,10 +33,21 @@ var ctx = document.getElementById("myChart").getContext("2d");
 var myNewChart = new Chart(ctx).Bar(data);
 </script>
 
-<%=JSON.stringify(data, null, "\t")%>
 <div>
-  <%for(var i=0; i < list.length; ++i) {%>
-    <p><a href='<%= list[i]['real']%>'><%= list[i]['title'] %></a> </p>
-  <%}%>
+
+	<%  
+	var label = '';
+	for(var key in data)
+	{%>
+		<%=key%> <%=data[key]['count']%>
+		=====================================
+		<%for(var idx in data[key]['data']) { %>
+			<p><a href='<%= data[key]['data'][idx]['link']%>'><%= data[key]['data'][idx]['title']%></a> </p>
+		<%}%>
+		
+	<%	
+	}
+	%>
+
 
 </div>

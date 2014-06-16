@@ -5,7 +5,7 @@
 
 var mongodb = require('mongodb');
 var async = require('async');
-
+var db_locate = '127.0.0.1'// '54.251.147.205'//
 
 // exports.index = function(req, res){
 // 	//res.render('./index.html');
@@ -14,7 +14,7 @@ var async = require('async');
 
 exports.board_select = function(req, res){
 	var action = req.params.act;
-	var mongodbServer = new mongodb.Server('localhost', 27017, { auto_reconnect: true, poolSize: 10 });
+	var mongodbServer = new mongodb.Server(db_locate, 27017, { auto_reconnect: true, poolSize: 10 });
 	var db = new mongodb.Db('setting', mongodbServer);
 	db.open(function() {
 		db.collection('board_list', function(err, collection) {
@@ -30,20 +30,7 @@ exports.board_select = function(req, res){
 
 
 exports.rank = function(req, res){
-	var mongodbServer = new mongodb.Server('localhost', 27017, { auto_reconnect: true, poolSize: 10 });
-	var db = new mongodb.Db(req.params.id, mongodbServer);
-	db.open(function() {
-		db.collection('rank', function(err, collection) {
-			collection.find({}, {limit:1, fields:{'_id': 0}})
-					  .sort({'time': -1})
-					  .toArray(function(err, docs) {
-					  	//console.log(docs);
-            			res.render('rank', { rank: docs[0], board_id:req.params.id });
-    					db.close();
-        			   });
-		});
-	});
-
+	res.render('rank', {  board_id:req.params.id });
 };
 
 
@@ -71,7 +58,7 @@ exports.rank_group = function(req, res){
 
 	// console.log('a');
 
-	// var mongodbServer = new mongodb.Server('localhost', 27017, { auto_reconnect: true, poolSize: 10 });
+	// var mongodbServer = new mongodb.Server(db_locate, 27017, { auto_reconnect: true, poolSize: 10 });
 	// var db = new mongodb.Db(req.params.id, mongodbServer);
 	// db.open(function() {
 	// 	console.log('b');
@@ -98,7 +85,7 @@ exports.rank_group = function(req, res){
 
 
 exports.grouplist = function(req, res){
-	var mongodbServer = new mongodb.Server('localhost', 27017, { auto_reconnect: true, poolSize: 10 });
+	var mongodbServer = new mongodb.Server(db_locate, 27017, { auto_reconnect: true, poolSize: 10 });
 	var db = new mongodb.Db(req.params.id, mongodbServer);
 	db.open(function() {
 		db.collection('group', function(err, collection) {
@@ -138,7 +125,7 @@ exports.grouplist = function(req, res){
 
 
 exports.links = function(req, res){
-	var mongodbServer = new mongodb.Server('localhost', 27017, { auto_reconnect: true, poolSize: 10 });
+	var mongodbServer = new mongodb.Server(db_locate, 27017, { auto_reconnect: true, poolSize: 10 });
 	var db = new mongodb.Db(req.params.id, mongodbServer);
 	db.open(function() {
 		db.collection('single', function(err, collection) {
@@ -191,6 +178,7 @@ function link_process(data)
 			 'wikipedia.org',
 			 'facebook.com',
 			 'appledaily.com.tw',
+			 'homeapple.com.tw',
 			 'chinatimes.com',
 			 'ettoday.net',
 			 'youtube.com',
@@ -213,12 +201,22 @@ function link_process(data)
 			 'hk.apple.nextmedia.com',
 			 'bbc.co.uk',
 			 'rti.org.tw',
-			 'epochtimes.com'];
+			 'epochtimes.com',
+			 'stormmediagroup.com',
+			 'sanlih.com.tw',
+			 'setnews.net',
+			 'pchome.com.tw',
+			 'cnyes.com',
+			 'anntw.com',
+			 'news.pts.org.tw',
+			 'news.sina.com.tw',
+			 'ithome.com.tw'];
 
 	var b = ['nownews.com',
 			 '維基百科',
 			 '維基百科',
 			 'facebook.com',
+			 '蘋果日報',
 			 '蘋果日報',
 			 '中時電子報',
 			 '東森新聞雲',
@@ -242,7 +240,16 @@ function link_process(data)
 			 '蘋果日報(香港)',
 			 'BBC中文網(簡體)',
 			 '中央廣播電台',
-			 '大紀元'];	
+			 '大紀元',
+			 '風傳媒',
+			 '三立新聞網',
+			 '三立新聞網',
+			 'pchome新聞',
+			 '鉅亨網',
+			 '台灣醒報',
+			 '公視新聞網',
+			 '新浪新聞',
+			 'iThome'];	
 
 	var c = [1,	//news
 			 2,
@@ -251,18 +258,28 @@ function link_process(data)
 			 1,
 			 1,
 			 1,
-			 2,
-			 2,
-			 1,
-			 1,
-			 1,
-			 1,
-			 1,
-			 1,
-			 1,
-			 1,
 			 1,
 			 2,
+			 2,
+			 1,
+			 1,
+			 1,
+			 1,
+			 1,
+			 1,
+			 1,
+			 1,
+			 1,
+			 2,
+			 1,
+			 1,
+			 1,
+			 1,
+			 1,
+			 1,
+			 1,
+			 1,
+			 1,
 			 1,
 			 1,
 			 1,
@@ -278,6 +295,7 @@ function link_process(data)
 	for(var i=0; i< result.length; ++i)
 	{
 		var link = result[i]['real'];
+		var title = result[i]['title'];
 		var isFind = false;
 		for(var j=0; j< a.length; ++j)
 		{
@@ -295,7 +313,7 @@ function link_process(data)
 					ary[b[j]]['count'] = 1;
 					ary[b[j]]['data'] = [];
 				}
-				ary[b[j]]['data'].push(link);
+				ary[b[j]]['data'].push({'link': link, 'title':title});
 				isFind = true;
 			}
 		}
@@ -313,7 +331,7 @@ function link_process(data)
 				ary['其他']['count'] = 1;
 				ary['其他']['data'] = [];
 			}
-			ary['其他']['data'].push(link);
+			ary['其他']['data'].push({'link': link, 'title':title});
 		}
 	}
 	console.log(ary);
@@ -326,7 +344,7 @@ exports.singleRankGet = function(req, res)
 	console.log(req.body.board);
 	console.log(req.body.sort);
 
-	var mongodbServer = new mongodb.Server('localhost', 27017, { auto_reconnect: true, poolSize: 10 });
+	var mongodbServer = new mongodb.Server(db_locate, 27017, {auto_reconnect: true, poolSize: 10}, {safe: true});
 	var db = new mongodb.Db(req.body.board, mongodbServer);
 	db.open(function() {
 		rangeDay = Date.now()/1000 - 60 * 60 * 24 * 5 
@@ -341,6 +359,7 @@ exports.singleRankGet = function(req, res)
 			// 	sort_cursor = cursor.sort({ 'extra_push_point.all': -1})
 			sort_cursor = cursor.sort({ 'score': -1})
 			sort_cursor.toArray(function(err, docs) {
+				console.log(docs);
             	res.send(docs);
     			db.close();
         	});
@@ -355,7 +374,7 @@ exports.groupRankGet = function(req, res)
 	console.log(req.body.board);
 	console.log(req.body.sort);
 
-	var mongodbServer = new mongodb.Server('localhost', 27017, { auto_reconnect: true, poolSize: 10 });
+	var mongodbServer = new mongodb.Server(db_locate, 27017, { auto_reconnect: true, poolSize: 10 });
 	var db = new mongodb.Db(req.body.board, mongodbServer);
 	db.open(function() {
 		rangeDay = Date.now()/1000 - 60 * 60 * 24 * 5 
@@ -378,3 +397,43 @@ exports.groupRankGet = function(req, res)
 	});
 
 }
+
+exports.keyword = function(req, res){
+	var mongodbServer = new mongodb.Server(db_locate, 27017, { auto_reconnect: true, poolSize: 10 });
+	var db = new mongodb.Db(req.params.id, mongodbServer);
+	db.open(function() {
+		db.collection('single', function(err, collection) {
+			collection.find({keyword:{ $exists: true}}, {limit:100000, fields:{'_id': 0}})
+					  .sort({'time': -1})
+					  .toArray(function(err, docs) {
+					  		var dict = {};
+					  		var ary = [];
+					  		for(var i = 0; i < docs.length; ++i)
+					  		{
+					  			if(docs[i]['keyword'] != null)
+					  			{
+					  				for(var j = 0; j < docs[i]['keyword'].length; ++j)
+					  				{
+					  					if(docs[i]['keyword'][j] in  dict )
+					  						dict[docs[i]['keyword'][j]]++;
+					  					else
+					  						dict[docs[i]['keyword'][j]] = 1;
+					  						
+					  				}
+					  			}
+					  		}
+
+					  		for(var key in dict)
+					  		{
+					  			ary.push({'name': key, 'count': dict[key]})
+					  		}
+					  		ary.sort(function(a, b){
+							    return b.count - a.count;
+							});
+					  		
+							res.render('keyword', { data:ary});
+							db.close();
+						});
+		});
+	});
+};
