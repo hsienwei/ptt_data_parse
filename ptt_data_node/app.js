@@ -55,6 +55,10 @@ app.get('/links/:id', routes.links);
 //app.get('/users', user.list);
 
 app.get('/keyword/:id', routes.keyword);
+app.get('/test', function (req, res) {
+    console.log("get /");
+    res.sendfile(__dirname + '/public/simple.html');
+});
 
 http.createServer(app).listen(app.get('port'), function(){
   console.log('Express server listening on port ' + app.get('port'));

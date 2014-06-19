@@ -8,8 +8,8 @@ import subprocess
 import warnings
 
 def update_board_list(list):
-	# conn=pymongo.Connection('127.0.0.1',27017)
-	conn=pymongo.Connection('54.251.147.205',27017)
+	conn=pymongo.Connection('127.0.0.1',27017)
+	# conn=pymongo.Connection('54.251.147.205',27017)
 
 	db = conn['setting']
 	db.board_list.drop()
@@ -17,17 +17,20 @@ def update_board_list(list):
 		db.board_list.insert({'board':board_name})
 
 def update_board_data():
-	board_list = ['Gossiping', 'Beauty', 'joke', 'StupidClown', 'sex', 'PublicIssue', 'HatePolitics']
+	board_list = ['Gossiping', 'Beauty', 'joke', 'StupidClown', 'sex', 'PublicIssue', 'HatePolitics', 'NBA', 'LoL']
 
 	parser = ptt_parser.PttWebParser()
-	parser.board_parse('Gossiping', 1)
-	parser.board_parse('Beauty', 1)
-	parser.board_parse('joke', 1)
-	parser.board_parse('StupidClown', 1)
-	parser.board_parse('sex', 1)
-	parser.board_parse('PublicIssue', 1)
-	parser.board_parse('HatePolitics', 1)
+	# parser.board_parse('Gossiping', 24)
+	# parser.board_parse('Beauty', 72)
+	parser.board_parse('joke', 72)
+	# parser.board_parse('StupidClown', 72)
+	# parser.board_parse('sex', 72)
+	# parser.board_parse('PublicIssue', 72)
+	# parser.board_parse('HatePolitics', 72)
+	# parser.board_parse('NBA', 24)
+	parser.board_parse('LoL', 24)
 	update_board_list(board_list)		
+	# parser.context_parse("https://www.ptt.cc/bbs/Gossiping/M.1403079856.A.F28.html")
 
 def fb_test():
 	#Trying to get an access token. Very awkward.

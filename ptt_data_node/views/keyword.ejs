@@ -1,0 +1,58 @@
+
+<div id="vis" ></div>
+<script src="/js/d3.js"></script>
+<script src="/js/d3.layout.cloud.js"></script>
+<script>
+  var data = <%-JSON.stringify(data.slice(0, 200))%>
+  var fill = d3.scale.category20();
+  var max = d3.max(data, function(d) { return d.size;} );
+  var linearScale = d3.scale.linear()
+                    .domain([0,max])
+                    .range([6,70]);
+
+  var width = $( window ).width() * 0.9;  
+  var halfwidth = width/2;    
+  var titleHeight = $("div[data-role='header']").height();
+  var height = $( window ).height() * 0.9 -  titleHeight ; 
+  var halfheight = height/2;           
+
+  d3.layout.cloud().size([width, height])
+      .words(data)
+      .rotate(function() { return ~~(Math.random() * 100) - 50 ; })
+      .font("Impact")
+      .fontSize(function(d) { return linearScale(d.size); })
+      .on("end", draw)
+      .start();
+
+  function draw(words) {
+    d3.select("#vis").append("svg")
+        .attr("width", width)
+        .attr("height", height)
+      .append("g")
+        .attr("transform", "translate(" + halfwidth + "," + halfheight + ")")
+      .selectAll("text")
+        .data(words)
+      .enter().append("text")
+        .style("font-size", function(d) { return d.size + "px"; })
+        .style("font-family", "Impact")
+        .style("fill", function(d, i) { return fill(i); })
+        .attr("text-anchor", "middle")
+        .attr("transform", function(d) {
+          return "translate(" + [d.x, d.y] + ")rotate(" + d.rotate + ")";
+        })
+        .text(function(d) { return d.text; });
+  }
+</script>
+
+<div>
+	<%  
+	for(var key in data)
+	{%>
+		<%=data[key]['text']%>  <%=data[key]['size']%><br>
+		
+	<%	
+	}
+	%>
+</div>
+
+

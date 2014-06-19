@@ -333,9 +333,9 @@ class PttWebParser	:
 			if keyword:
 				content_obj['keyword'] = keyword
 
-			links = self._link_parse(response, content_link)
-			if len(links) > 0:
-				content_obj['links'] = links
+			# links = self._link_parse(response, content_link)
+			# if len(links) > 0:
+			# 	content_obj['links'] = links
 
 			fb_data = self._fb_parse(content_link)	
 			content_obj['fb'] = fb_data
@@ -475,17 +475,20 @@ class PttWebParser	:
 		[span.extract() for span in spans]
 		richcontents = soup.findAll('div',  {"class":"richcontent"})
 		[richcontent.extract() for richcontent in richcontents]
-		print '================'
 		tags = None
-		print div
+		
 		if not div is None:
 			contenttext = ''
 			for str in div.strings:
 				contenttext += str
-		
+			m = re.match('((.*\n)*)(\-{2}\n(.*\n)*?\-{2}\n*$)', contenttext)
+			if  m != None:
+				contenttext = m.groups()[0]
+			
 			tags = jieba.analyse.extract_tags( contenttext, topK=30)		
+			print contenttext
+			print '================'	
 			print tags
-		print '================'	
 		return tags
 		
 

@@ -309,6 +309,7 @@ function link_process(data)
 				else
 				{
 					ary[b[j]] = {}
+					ary[b[j]]['name'] = b[j];
 					ary[b[j]]['kind'] = c[j];
 					ary[b[j]]['count'] = 1;
 					ary[b[j]]['data'] = [];
@@ -327,6 +328,7 @@ function link_process(data)
 			else
 			{
 				ary['其他'] = {}
+				ary['其他']['name'] = '其他';
 				ary['其他']['kind'] = 0;
 				ary['其他']['count'] = 1;
 				ary['其他']['data'] = [];
@@ -403,7 +405,7 @@ exports.keyword = function(req, res){
 	var db = new mongodb.Db(req.params.id, mongodbServer);
 	db.open(function() {
 		db.collection('single', function(err, collection) {
-			collection.find({keyword:{ $exists: true}}, {limit:100000, fields:{'_id': 0}})
+			collection.find({keyword:{ $exists: true}}, {limit:1000, fields:{'_id': 0}})
 					  .sort({'time': -1})
 					  .toArray(function(err, docs) {
 					  		var dict = {};
@@ -425,10 +427,10 @@ exports.keyword = function(req, res){
 
 					  		for(var key in dict)
 					  		{
-					  			ary.push({'name': key, 'count': dict[key]})
+					  			ary.push({'text': key, 'size': dict[key]})
 					  		}
 					  		ary.sort(function(a, b){
-							    return b.count - a.count;
+							    return b['size'] - a['size'];
 							});
 					  		
 							res.render('keyword', { data:ary});
