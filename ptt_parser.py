@@ -329,13 +329,13 @@ class PttWebParser	:
 					content_obj['title'] = metaDivValue.string
 			print 'contentGet stop parse time'	
 
-			keyword = self._keyword_parse(response)
-			if keyword:
-				content_obj['keyword'] = keyword
+			# keyword = self._keyword_parse(response)
+			# if keyword:
+			# 	content_obj['keyword'] = keyword
 
-			links = self._link_parse(response, content_link)
-			if len(links) > 0:
-				content_obj['links'] = links
+			# links = self._link_parse(response, content_link)
+			# if len(links) > 0:
+			# 	content_obj['links'] = links
 
 			fb_data = self._fb_parse(content_link)	
 			content_obj['fb'] = fb_data
@@ -669,7 +669,7 @@ class PttWebParser	:
 			print 'add to db'
 		else:
 			findDoc['push'] = context_obj['push']
-			findDoc['keyword'] = context_obj['keyword']
+			# findDoc['keyword'] = context_obj['keyword']
 			findDoc['fb'] = context_obj['fb']
 			findDoc['score'] = context_obj['score']
 			db.single.save(findDoc)				
