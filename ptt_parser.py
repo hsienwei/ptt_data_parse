@@ -333,9 +333,9 @@ class PttWebParser	:
 			if keyword:
 				content_obj['keyword'] = keyword
 
-			# links = self._link_parse(response, content_link)
-			# if len(links) > 0:
-			# 	content_obj['links'] = links
+			links = self._link_parse(response, content_link)
+			if len(links) > 0:
+				content_obj['links'] = links
 
 			fb_data = self._fb_parse(content_link)	
 			content_obj['fb'] = fb_data
