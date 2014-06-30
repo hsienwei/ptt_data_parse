@@ -31,6 +31,7 @@ def update_board_data():
 	parser.board_parse('LoL', 24)
 	update_board_list(board_list)		
 	# parser.context_parse("https://www.ptt.cc/bbs/Gossiping/M.1403079856.A.F28.html")
+	# parser.context_parse("https://www.ptt.cc/bbs/HatePolitics/M.1404095069.A.092.html")
 
 def fb_test():
 	#Trying to get an access token. Very awkward.
