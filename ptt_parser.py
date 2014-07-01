@@ -14,7 +14,7 @@ import copy
 import platform
 import jieba
 import jieba.analyse
-import sys
+import sys, os
 import tweepy
 import shutil
 
@@ -25,6 +25,12 @@ import subprocess
 import warnings
 import subprocess
 
+from multiprocessing import Pool, Process, Value, Array, Manager, Lock
+
+def run_context_parse(obj, param):
+	context = obj.context_parse(param)
+	with open("temp.json", "w+") as f:	
+		f.write(json.dumps(context, indent=4))
 
 class TwitterRecorder:
 	def	__init__(self):
@@ -35,8 +41,6 @@ class TwitterRecorder:
 		auth = tweepy.OAuthHandler(twitter_obj['consumer_key'], twitter_obj['consumer_secret'])
 		auth.set_access_token(twitter_obj['access_token'], twitter_obj['access_token_secret'])
 		self.twitter_api = tweepy.API(auth)
-
-		
 
 	def twitter_update(self, msg):
 		if not self.twitter_api is None:
@@ -75,6 +79,7 @@ class PttWebParser	:
 
 		self._pre_dict_combine('combine_dict.txt')
 		jieba.set_dictionary('combine_dict.txt')
+		jieba.initialize()
 	
 	def _pre_dict_combine(self, combine_file_path):
 		origin_file = 'dict.txt.big'
@@ -329,13 +334,13 @@ class PttWebParser	:
 					content_obj['title'] = metaDivValue.string
 			print 'contentGet stop parse time'	
 
-			# keyword = self._keyword_parse(response)
-			# if keyword:
-			# 	content_obj['keyword'] = keyword
+			keyword = self._keyword_parse(response)
+			if keyword:
+				content_obj['keyword'] = keyword
 
-			# links = self._link_parse(response, content_link)
-			# if len(links) > 0:
-			# 	content_obj['links'] = links
+			links = self._link_parse(response, content_link)
+			if len(links) > 0:
+				content_obj['links'] = links
 
 			fb_data = self._fb_parse(content_link)	
 			content_obj['fb'] = fb_data
@@ -669,7 +674,6 @@ class PttWebParser	:
 			print 'add to db'
 		else:
 			findDoc['push'] = context_obj['push']
-			# findDoc['keyword'] = context_obj['keyword']
 			findDoc['fb'] = context_obj['fb']
 			findDoc['score'] = context_obj['score']
 			db.single.save(findDoc)				
@@ -750,20 +754,45 @@ class PttWebParser	:
 		conn=pymongo.MongoClient(self.db_address, 27017, max_pool_size=10)
 		while not list_link is None:
 			context_list_obj = self.context_list_parse(list_link)
+
+			#=== 採用multiprocess解決記憶體過大問題
 			for context_list in context_list_obj['context_list']:
-				context_obj = self.context_parse(context_list['link'])
-				if context_obj:
-				 	self._complete_context(context_obj, context_list)
+				# pool.apply_async(run_context_parse, (self, context_list['link'], ))
+				p = Process(target=run_context_parse, args=(self, context_list['link']))
+				p.start()
+				p.join()
+
+				if os.path.isfile("temp.json"):
+					with open("temp.json", "r") as f:
+						context_obj = json.loads(f.read())
+						self._complete_context(context_obj, context_list)
 				 	
-					#save to db
-					#conn=pymongo.Connection('54.251.147.205',27017)
+						#save to db
+						#conn=pymongo.Connection('54.251.147.205',27017)
+						
+						db = conn[board_name]#conn['Gossiping']
+						self._context_to_single_db(db, context_obj)
+						self._context_to_group_db(db, context_obj)
+						#如果超過指定時間結束
+						if context_obj['time'] < endTime:
+							flag_stop = True
+
+			#====
+
+			# for context_list in context_list_obj['context_list']:
+			# 	context_obj = self.context_parse(context_list['link'])
+			# 	if context_obj:
+			# 	 	self._complete_context(context_obj, context_list)
+				 	
+			# 		#save to db
+			# 		#conn=pymongo.Connection('54.251.147.205',27017)
 					
-					db = conn[board_name]#conn['Gossiping']
-					self._context_to_single_db(db, context_obj)
-					self._context_to_group_db(db, context_obj)
-					#如果超過指定時間結束
-					if context_obj['time'] < endTime:
-						flag_stop = True
+			# 		db = conn[board_name]#conn['Gossiping']
+			# 		self._context_to_single_db(db, context_obj)
+			# 		self._context_to_group_db(db, context_obj)
+			# 		#如果超過指定時間結束
+			# 		if context_obj['time'] < endTime:
+			# 			flag_stop = True
 					
 			if flag_stop:
 				list_link = None
