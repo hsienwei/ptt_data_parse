@@ -342,7 +342,7 @@ class PttWebParser	:
 			if len(links) > 0:
 				content_obj['links'] = links
 
-			fb_data = self._fb_parse(content_link)	
+			fb_data = self._fb_parse(content_link, pushData['g'])	
 			content_obj['fb'] = fb_data
 
 			score = pushData['g'] * 2 + pushData['b'] + pushData['n'] #fb_data['like_count'] + fb_data['share_count'] + fb_data['comment_count'] + pushData['g'] * 2 + pushData['b'] + pushData['n']
@@ -352,7 +352,7 @@ class PttWebParser	:
 			
 		return content_obj	
 
-	def _fb_parse(self, origin_link):
+	def _fb_parse(self, origin_link, push_count):
 		# #[{"like_count":1421162,"share_count":5664540,"comment_count":1748801}]
 		# url = 'https://api.facebook.com/method/fql.query?format=json&query=select%20%20like_count,%20share_count,comment_count%20from%20link_stat%20where%20url=%22' + origin_link.string + '%22'
 		# response = self.br.open(url, timeout=30.0)
@@ -363,6 +363,10 @@ class PttWebParser	:
 		# return fb_json[0]
 
 		# [{u'fql_result_set': [{u'normalized_url': u'http://www.yahoo.com/', u'commentsbox_count': 4690, u'click_count': 0, u'url': u'http://www.yahoo.com', u'total_count': 259986, u'comment_count': 34555, u'like_count': 73902, u'comments_fbid': 386757221287, u'share_count': 151529}], u'name': u'example'}]
+		fb_data = None
+		if push_count < 10:
+			return fb_data
+
 		fb_data = {}
 		if  self.graph : #graph.fql({'example':"SELECT url,normalized_url,share_count,like_count,comment_count,total_count,commentsbox_count,comments_fbid,click_count FROM link_stat WHERE url=\'" + link+ "\'"})
 			fql_str = "SELECT url,normalized_url,share_count,like_count,comment_count,total_count,commentsbox_count,comments_fbid,click_count FROM link_stat WHERE url=\'" + origin_link+ "\'"
