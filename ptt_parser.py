@@ -77,9 +77,9 @@ class PttWebParser	:
 		except KeyError:
 		    print('Unable to grab an access token!')
 
-		self._pre_dict_combine('combine_dict.txt')
-		jieba.set_dictionary('combine_dict.txt')
-		jieba.initialize()
+		# self._pre_dict_combine('combine_dict.txt')
+		# jieba.set_dictionary('combine_dict.txt')
+		# jieba.initialize()
 	
 	def _pre_dict_combine(self, combine_file_path):
 		origin_file = 'dict.txt.big'
@@ -334,9 +334,9 @@ class PttWebParser	:
 					content_obj['title'] = metaDivValue.string
 			print 'contentGet stop parse time'	
 
-			keyword = self._keyword_parse(response)
-			if keyword:
-				content_obj['keyword'] = keyword
+			# keyword = self._keyword_parse(response)
+			# if keyword:
+			# 	content_obj['keyword'] = keyword
 
 			links = self._link_parse(response, content_link)
 			if len(links) > 0:
