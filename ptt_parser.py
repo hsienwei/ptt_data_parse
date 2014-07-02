@@ -334,9 +334,9 @@ class PttWebParser	:
 					content_obj['title'] = metaDivValue.string
 			print 'contentGet stop parse time'	
 
-			keyword = self._keyword_parse(response)
-			if keyword:
-				content_obj['keyword'] = keyword
+			# keyword = self._keyword_parse(response)
+			# if keyword:
+			# 	content_obj['keyword'] = keyword
 
 			links = self._link_parse(response, content_link)
 			if len(links) > 0:
