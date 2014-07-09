@@ -79,7 +79,9 @@ class PttWebParser	:
 
 		# self._pre_dict_combine('combine_dict.txt')
 		# jieba.set_dictionary('combine_dict.txt')
-		jieba.set_dictionary('dict.txt')
+		dict_path = os.path.dirname(os.path.abspath(__file__)) + '/dict.txt'
+		print dict_path
+		jieba.set_dictionary(dict_path)
 		jieba.initialize()
 	
 	def _pre_dict_combine(self, combine_file_path):
