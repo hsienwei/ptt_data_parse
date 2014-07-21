@@ -29,7 +29,7 @@ from multiprocessing import Pool, Process, Value, Array, Manager, Lock
 
 def run_context_parse(obj, param):
 	context = obj.context_parse(param)
-	with open("temp.json", "w+") as f:	
+	with open((os.path.dirname(os.path.abspath(__file__)) + "/temp.json"), "w") as f:	
 		f.write(json.dumps(context, indent=4))
 
 class TwitterRecorder:
@@ -769,8 +769,10 @@ class PttWebParser	:
 				p.start()
 				p.join()
 
-				if os.path.isfile("temp.json"):
-					with open("temp.json", "r") as f:
+				tmpPath = os.path.dirname(os.path.abspath(__file__)) + "/temp.json"
+
+				if os.path.isfile(tmpPath):
+					with open(tmpPath, "r") as f:
 						context_obj = json.loads(f.read())
 						if context_obj:
 							self._complete_context(context_obj, context_list)
