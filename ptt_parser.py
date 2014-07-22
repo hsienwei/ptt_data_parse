@@ -498,8 +498,8 @@ class PttWebParser	:
 				contenttext = m.groups()[0]
 			
 			tags = jieba.analyse.extract_tags( contenttext, topK=30)		
-			print contenttext
-			print '================'	
+			# print contenttext
+			# print '================'	
 			print tags
 		return tags
 		
