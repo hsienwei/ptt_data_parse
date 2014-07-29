@@ -7,7 +7,12 @@ PTT Watcher
 1. 以討論程度做文章排行 (後來加上fb分享做判定)   
 2. 各媒體在某版的出現次數統計   
 3. 各版目前關鍵字   
-   
+
+      
+web clawer : python (BeautifulSoup, mechanize, jieba)   
+web server: aws ec2, node.js , express, d3, mongoDB   
+
+
 demo:   
 http://ec2-54-251-147-205.ap-southeast-1.compute.amazonaws.com
 
