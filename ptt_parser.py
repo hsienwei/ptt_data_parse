@@ -185,7 +185,7 @@ class PttWebParser	:
 				print titleLink.string.encode('utf8')
 				
     	        
-				m = re.search('\/bbs\/([A-Za-z0-9]+)\/([A-Za-z0-9\.]+)\.html', titleLink['href'])
+				m = re.search('\/bbs\/([A-Za-z0-9_\-]+)\/([A-Za-z0-9\.]+)\.html', titleLink['href'])
 				print m.groups()[0]
 				id = m.groups()[1]
 				contentLink = 'http://www.ptt.cc' + titleLink['href']

@@ -17,7 +17,7 @@ def update_board_list(list):
 		db.board_list.insert({'board':board_name})
 
 def update_board_data():
-	board_list = ['Gossiping', 'Beauty', 'joke', 'StupidClown', 'sex', 'PublicIssue', 'HatePolitics', 'NBA', 'LoL']
+	board_list = ['Gossiping', 'Beauty', 'joke', 'StupidClown', 'sex', 'PublicIssue', 'HatePolitics', 'NBA', 'LoL', 'C_Chat', 'Boy-Girl']
 
 	parser = ptt_parser.PttWebParser()
 	parser.board_parse('Gossiping', 24)
@@ -29,6 +29,8 @@ def update_board_data():
 	parser.board_parse('HatePolitics', 72)
 	parser.board_parse('NBA', 24)
 	parser.board_parse('LoL', 24)
+        parser.board_parse('C_Chat', 24)
+	parser.board_parse('Boy-Girl', 24)
 	update_board_list(board_list)		
 	# parser.context_parse("https://www.ptt.cc/bbs/Gossiping/M.1403079856.A.F28.html")
 	# parser.context_parse("https://www.ptt.cc/bbs/HatePolitics/M.1404095069.A.092.html")
