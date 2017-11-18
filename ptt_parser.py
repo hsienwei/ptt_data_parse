@@ -209,6 +209,11 @@ class PttWebParser	:
 				link = link_elm.get_property("href")
 				print(title)
 				print(link)
+
+				m = re.search('\/bbs\/([A-Za-z0-9_\-]+)\/([A-Za-z0-9\.]+)\.html', link)
+				id = m.groups()[1]
+				print(id)
+
 			'''titleDiv = recordDiv.find("div", {"class":"title"})
 			metaDiv = recordDiv.find("div", {"class":"meta"})
 	
@@ -229,6 +234,13 @@ class PttWebParser	:
 				else:
 					list_detail['context_list'] = []
 '''
+			if 'context_list' not in list_detail:
+				list_detail['context_list'] = []
+
+			list_detail['context_list'].append({'title': title.encode('utf8'), 'link': link, 'cid': id})
+			
+		print(list_detail)			
+		self.web.close()
 		return list_detail		
 
 	def context_parse(self, content_link):
