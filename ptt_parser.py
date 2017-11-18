@@ -1,29 +1,32 @@
 # coding=utf8
 
-import mechanize
+#import mechanize
 import time
 from bs4 import BeautifulSoup, SoupStrainer
 import urllib
 import re
 import json
-from dateutil import parser
+#from dateutil import parser
 import time
 import datetime
-import pymongo
+#import pymongo
 import copy
 import platform
-import jieba
-import jieba.analyse
+#import jieba
+#import jieba.analyse
 import sys, os
-import tweepy
+#import tweepy
 import shutil
 
-import facebook
+#import facebook
 import urllib
-import urlparse
+#import urlparse
 import subprocess
 import warnings
 import subprocess
+from selenium import webdriver
+from selenium.webdriver.common.by import By
+
 
 from multiprocessing import Pool, Process, Value, Array, Manager, Lock
 
@@ -49,18 +52,19 @@ class TwitterRecorder:
 
 class PttWebParser	:
 	def __init__(self):
-		self.br = br = mechanize.Browser()
-		self.br.set_handle_robots(False) # ignore robots
-		self.br.set_handle_refresh(False)
-		self.sixHourBeforeTime = time.time() - 60 * 60 * 6
-		self.db_address = '127.0.0.1' #'54.251.147.205'
+		#self.br = br = mechanize.Browser()
+		#self.br.set_handle_robots(False) # ignore robots
+		#self.br.set_handle_refresh(False)
+		#self.sixHourBeforeTime = time.time() - 60 * 60 * 6
+		#self.db_address = '127.0.0.1' #'54.251.147.205'
+		self.web = webdriver.Chrome(executable_path=r'.\chromedriver.exe')
 
 		if platform.system() == 'Windows':
 			self.features = 'html5lib'
 		else:
 			self.features = 'lxml'
 
-		oauth_args = dict(client_id     = '482698495096073',
+		'''oauth_args = dict(client_id     = '482698495096073',
 	                  client_secret = '8c58b055fcb762a9780638dc401c85e2',
 	                  grant_type    = 'client_credentials')
 
@@ -69,21 +73,22 @@ class PttWebParser	:
 		oauth_response = subprocess.Popen(oauth_curl_cmd,
 		                                  stdout = subprocess.PIPE,
 		                                  stderr = subprocess.PIPE).communicate()[0]
-		print oauth_curl_cmd
-		print str(oauth_response)
+		print (oauth_curl_cmd)
+		print (str(oauth_response))
 		try:
 		    oauth_access_token = urlparse.parse_qs(str(oauth_response))['access_token'][0]
 		    self.graph = facebook.GraphAPI(oauth_access_token)
 		except KeyError:
 		    print('Unable to grab an access token!')
-
+		'''
 		# self._pre_dict_combine('combine_dict.txt')
 		# jieba.set_dictionary('combine_dict.txt')
-		dict_path = os.path.dirname(os.path.abspath(__file__)) + '/dict.txt'
-		print dict_path
-		jieba.set_dictionary(dict_path)
-		jieba.initialize()
+		#dict_path = os.path.dirname(os.path.abspath(__file__)) + '/dict.txt'
+		#print (dict_path)
+		#jieba.set_dictionary(dict_path)
+		#jieba.initialize()
 	
+	'''
 	def _pre_dict_combine(self, combine_file_path):
 		origin_file = 'dict.txt.big'
 		customize_file = 'dict.txt'
@@ -124,69 +129,98 @@ class PttWebParser	:
 				data = add_data[key]
 				f.write(data['key'] + ' ' + data['feq'] + ' ' + data['type'])
 		#print add_data		
-	
+	'''
 	def context_list_parse(self, link):
 
 		flagStop = False
 		list_detail = {}
 		
-		print 'process list:' + link
+		print ('process list:' + link)
 	
 		try_time = 0
-		response = None
 		time.sleep(1)
-		while (response is None):
+		while (True): 
 			try:
 				if try_time > 50:
 					flagStop = True
 					break
-				response = self.br.open(link)
-			except:	
-				print 're Try'
-				response = None	
+				self.web.get(link)
+				print(self.web.page_source)
+			
+			except Exception as e:
+				logger.error('Failed to upload to ftp: '+ str(e))
+				print ('re Try')
 			try_time = try_time + 1	
-			time.sleep(3)	
-	
+
+			try:
+				a = self.web.find_element_by_css_selector('.bbs-content')
+				print(a)
+				break
+			except selenium.common.exceptions.NoSuchElementException as ne:
+				print ('re Try')
+			
+		print('out load')
 		if flagStop:
 			return list_detail
 	
-		if response.geturl().find('over18') != -1:
-			print 'over 18 page process'
-			self.br.select_form(nr=0)
-			response = self.br.submit(name='yes', label='yes')
+		if self.web.current_url.find('over18') != -1:
+			print ('over 18 page process')
+			yes = self.web.find_element_by_xpath("//button[@name='yes']")
+			yes.click()
+			
 	
 		nextIdx = 0;
 		#nextLink = None
 	
-		only_div_btngroup = SoupStrainer("div", {"class":"btn-group pull-right"})
-		only_div_r_ent = SoupStrainer("div", {"class":"r-ent"})
+		#only_div_btngroup = SoupStrainer("div", {"class":"btn-group pull-right"})
+		#only_div_r_ent = SoupStrainer("div", {"class":"r-ent"})
 		#response2 = copy.copy(response)
-		soup = BeautifulSoup(copy.copy(response), features=self.features, parse_only=only_div_btngroup);
-		soup2 = BeautifulSoup(copy.copy(response), features=self.features, parse_only=only_div_r_ent);
+		#soup = BeautifulSoup(copy.copy(self.web.page_source), features=self.features, parse_only=only_div_btngroup);
+		#soup2 = BeautifulSoup(copy.copy(self.web.page_source), features=self.features, parse_only=only_div_r_ent);
 	
 		#下一頁面連結取得
-		pageLinkDiv = soup.find("div", {"class":"btn-group pull-right"})
-		for pageLink in pageLinkDiv.findAll('a', href=True):
+		pageLinkDiv = self.web.find_element_by_css_selector('.btn-group.btn-group-paging')   #soup.find("div", {"class":"btn-group pull-right"})
+		'''for pageLink in pageLinkDiv.findAll('a', href=True):
 			if pageLink.string.encode('utf8').find('上頁') != -1:
 				# listLink = 'http://www.ptt.cc' + pageLink['href']
 				list_detail['next_list'] = 'http://www.ptt.cc' + pageLink['href']
-
+		'''
+		print(pageLinkDiv)
+		pre_link_a = pageLinkDiv.find_element_by_xpath(".//a[2]")
+		print(pre_link_a)
+		print(pre_link_a.text)
+		next_link = pre_link_a.get_property("href")
+		print(next_link)
+		list_detail['next_list'] = next_link
 	
 		#文章列表
-	
-		for recordDiv in reversed(soup2.findAll("div", {"class":"r-ent"})):
-			titleDiv = recordDiv.find("div", {"class":"title"})
+		page_content = self.web.find_element_by_css_selector('.r-list-container.action-bar-margin.bbs-screen')
+
+		content_list = page_content.find_elements_by_tag_name('div')
+
+		for content in content_list:
+			
+			if content.get_attribute('class') == 'r-list-sep':
+				break
+			if content.get_attribute('class') == 'r-ent':
+				title_elm = content.find_element_by_class_name('title')
+				link_elm = title_elm.find_element_by_tag_name('a') 
+				title = link_elm.text
+				link = link_elm.get_property("href")
+				print(title)
+				print(link)
+			'''titleDiv = recordDiv.find("div", {"class":"title"})
 			metaDiv = recordDiv.find("div", {"class":"meta"})
 	
 			titleLink = titleDiv.find('a', href=True);
 			if not titleLink is None:
-				print '==='
-				print titleLink['href']
-				print titleLink.string.encode('utf8')
+				print ('===')
+				print (titleLink['href'])
+				print (titleLink.string.encode('utf8'))
 				
     	        
 				m = re.search('\/bbs\/([A-Za-z0-9_\-]+)\/([A-Za-z0-9\.]+)\.html', titleLink['href'])
-				print m.groups()[0]
+				print (m.groups()[0])
 				id = m.groups()[1]
 				contentLink = 'http://www.ptt.cc' + titleLink['href']
 				
@@ -194,18 +228,18 @@ class PttWebParser	:
 					list_detail['context_list'].append({'title': titleLink.string.encode('utf8'), 'link': contentLink, 'cid': id})
 				else:
 					list_detail['context_list'] = []
-
+'''
 		return list_detail		
 
 	def context_parse(self, content_link):
 		response = None
-		print content_link
+		print (content_link)
 		try:
 			response = self.br.open(content_link)
-			print 'contentGet:' + response.geturl()
+			print ('contentGet:' + response.geturl())
 
 			if response.geturl().find('over18') != -1:
-				print 'over 18 page process'
+				print ('over 18 page process')
 				self.br.select_form(nr=0)
 				response = self.br.submit(name='yes', label='yes')
 		except:	
@@ -219,7 +253,7 @@ class PttWebParser	:
 			pushGoodCount = 0
 			pushBadCount = 0
 			pushNormalCount = 0
-			print 'contentGet start parse push'
+			print ('contentGet start parse push')
 			pushTmpMonth = 0
 			pushTmpYearOffset = 0
 			extraPushPoint = 0
@@ -261,10 +295,10 @@ class PttWebParser	:
 					if pushTmpMonth > parsedTime.month:
 						pushTmpYearOffset = pushTmpYearOffset + 1
 					pushTmpMonth = parsedTime.month
-			print 'pushAllCount ' + str(pushGoodCount + pushBadCount + pushNormalCount)
-			print 'extraPushPoint ' + str(extraPushPoint)
+			print ('pushAllCount ' + str(pushGoodCount + pushBadCount + pushNormalCount))
+			print ('extraPushPoint ' + str(extraPushPoint))
 	
-			print 'contentGet end parse push'
+			print ('contentGet end parse push')
 			pushData = { 'all':pushGoodCount + pushBadCount + pushNormalCount,  'g' : pushGoodCount, 'b': pushBadCount, 'n':pushNormalCount}
 			pushExtraData = {   'all':pushData['all'] + extraPushPoint,  
 								'g' : pushData['g'] + extraPushPoint, 
@@ -280,9 +314,9 @@ class PttWebParser	:
 			links = []		
 			only_link = SoupStrainer('a', href=True)
 			soup = BeautifulSoup(copy.copy(response), features=self.features, parse_only=only_link)
-			print 'contentGet start parse link'	
+			print ('contentGet start parse link')
 			for link in soup.findAll('a', href=True):
-				print 'contentGet parse link'
+				print ('contentGet parse link')
 				m = re.search('http://.+', link['href'])
 				if not m is None:
 	
@@ -291,7 +325,7 @@ class PttWebParser	:
 					if link['href'].find('http://www.ptt.cc/') != -1:
 						continue	
 	
-					print '--' +  link['href'].encode('utf8')
+					print ('--' +  link['href'].encode('utf8'))
 	
 					contenturl = link['href']
 	
@@ -301,22 +335,22 @@ class PttWebParser	:
 					# 	linkData[contenturl] = linkData[contenturl] + pushGoodCount + pushBadCount + pushNormalCount;
 					# else:
 					# 	linkData[contenturl] = pushGoodCount + pushBadCount + pushNormalCount;
-			print 'contentGet end parse link'
+			print ('contentGet end parse link')
 			# contextData[contentLink]['link'] = links			
 			
 			#時間
 			#<span class="article-meta-value">Tue Apr 15 00:07:21 2014</span>
 			only_div_acticlemeta = SoupStrainer('div',  {"class":"article-metaline"})
 			soup = BeautifulSoup(copy.copy(response), features=self.features, parse_only=only_div_acticlemeta)
-			print 'contentGet start parse time'
+			print ('contentGet start parse time')
 			for metaDiv in soup.findAll('div',  {"class":"article-metaline"}):
-				print 'contentGet parse time'
+				print ('contentGet parse time')
 				metaDivTag = metaDiv.find('span',  {"class":"article-meta-tag"})
 				metaDivValue = metaDiv.find('span',  {"class":"article-meta-value"})
 				try:
 					if metaDivTag.string.encode('utf8').find('時間') != -1:
-						print metaDivValue.string
-						print parser.parse(metaDivValue.string)
+						print (metaDivValue.string)
+						print (parser.parse(metaDivValue.string))
 						#object['time'] = parser.parse(metaDivValue.string).strftime("%Y-%m-%d %H:%M:%S")
 						#contextTime = time.mktime(time.strptime(object['time'], '%Y-%m-%d %H:%M:%S'))
 						parsedTimeStr = parser.parse(metaDivValue.string).strftime("%Y-%m-%d %H:%M:%S")
@@ -324,7 +358,7 @@ class PttWebParser	:
 						#object['time'] = contextTime
 						content_obj['time'] = contextTime
 				except:
-					print 'time format error'	
+					print ('time format error')	
 	
 					# print contextTime
 					# print endTime
@@ -335,7 +369,7 @@ class PttWebParser	:
 				if metaDivTag.string.encode('utf8').find('標題') != -1:
 					#object['title'] = metaDivValue.string
 					content_obj['title'] = metaDivValue.string
-			print 'contentGet stop parse time'	
+			print ('contentGet stop parse time')	
 
 			keyword = self._keyword_parse(response)
 			if keyword:
@@ -375,28 +409,28 @@ class PttWebParser	:
 			fql_str = "SELECT url,normalized_url,share_count,like_count,comment_count,total_count,commentsbox_count,comments_fbid,click_count FROM link_stat WHERE url=\'" + origin_link+ "\'"
 			# fql_results = self.graph.fql({'example':"SELECT url,normalized_url,share_count,like_count,comment_count,total_count,commentsbox_count,comments_fbid,click_count FROM link_stat WHERE url='http://www.ptt.cc/bbs/sex/M.1401765380.A.52C.html'"})
 			fql_results = self.graph.fql({'example': str(fql_str)})
-			print fql_str
-			print "<<<<<<<<"
-			print fql_results
+			print (fql_str)
+			print ("<<<<<<<<")
+			print (fql_results)
 			for result in fql_results:
 				if result['name'] == 'example':
 					fb_data['share_count'] = result['fql_result_set'][0]['share_count']
 					fb_data['like_count'] = result['fql_result_set'][0]['like_count']
 					fb_data['comment_count'] = result['fql_result_set'][0]['comment_count']
-		print fb_data		
+		print (fb_data)		
 		return fb_data
 
 	def _link_parse(self, response, origin_link):
 		#取連結
 		only_link = SoupStrainer('a', href=True)
 		soup = BeautifulSoup(copy.copy(response), features=self.features, parse_only=only_link)
-		print 'contentGet start parse link'	
+		print ('contentGet start parse link')
 		link_ary = []
 		for link in soup.findAll('a', href=True):
 			m = re.search('http[s]?://.+', link['href'])
 			if not m is None:
 
-				print '-origin-:' +  link['href'].encode('utf8')
+				print ('-origin-:' +  link['href'].encode('utf8'))
 
 				contenturl = link['href'].encode('utf8')
 
@@ -408,7 +442,7 @@ class PttWebParser	:
 
 				if not response_link is None:
 					link_data = {}
-					print response_link.geturl()
+					print (response_link.geturl())
 					link_data['origin'] = contenturl
 					link_data['real'] = response_link.geturl()
 
@@ -470,7 +504,7 @@ class PttWebParser	:
 					link_data['title'] = title	
 					link_ary.append(link_data)
 		return link_ary			
-
+	'''
 	def _keyword_parse(self, response):
 		#取keyword
 		#only_div_acticlemeta = SoupStrainer('div',  {"class":"article-metaline"})
@@ -500,9 +534,9 @@ class PttWebParser	:
 			tags = jieba.analyse.extract_tags( contenttext, topK=30)		
 			# print contenttext
 			# print '================'	
-			print tags
+			print (tags)
 		return tags
-		
+	'''	
 
 	# #=======
 	# def parseKeyword(board_data):
@@ -654,8 +688,8 @@ class PttWebParser	:
 
 	#當內文解析出了問題缺少資料，用清單的資料與其他資料來補
 	def _complete_context(self, context_obj, list_data):
-		print context_obj
-		print list_data
+		print (context_obj)
+		print (list_data)
 		context_obj['id'] = list_data['cid']
 					
 		#內文title抓不到 用列表的
@@ -678,13 +712,13 @@ class PttWebParser	:
 		findDoc = db.single.find_one({'id': context_obj['id']})
 		if findDoc is None:
 			db.single.insert(context_obj)
-			print 'add to db'
+			print ('add to db')
 		else:
 			findDoc['push'] = context_obj['push']
 			findDoc['fb'] = context_obj['fb']
 			findDoc['score'] = context_obj['score']
 			db.single.save(findDoc)				
-			print 'change db'		
+			print ('change db')		
 	def _context_to_group_db(self, db, context_obj):
 		context_id = context_obj['id']
 		group_key_str = '';
@@ -742,14 +776,14 @@ class PttWebParser	:
 		contextData2 = {}
 		flagStop = False
 		curTime = time.time()
-		print '=== start time ==='
-		print curTime
-		print datetime.datetime.fromtimestamp(curTime).strftime('%Y-%m-%d %H:%M:%S')
+		print ('=== start time ===')
+		print (curTime)
+		print (datetime.datetime.fromtimestamp(curTime).strftime('%Y-%m-%d %H:%M:%S'))
 		endTime = curTime - 60 * 60 * time_range 
 		#rangeDay = curTime - 60 * 60 * boardData['rankHour']
 		sixHourBeforeTime = curTime - 60 * 60 * 6
-		print datetime.datetime.fromtimestamp(endTime).strftime('%Y-%m-%d %H:%M:%S')
-		print '=================='
+		print (datetime.datetime.fromtimestamp(endTime).strftime('%Y-%m-%d %H:%M:%S'))
+		print ('==================')
 	
     	#dataCollect();
 		#board = 'beauty'#'Gossiping'
@@ -758,7 +792,7 @@ class PttWebParser	:
 		# 	formProcess2(listLink)#HatePolitics
 
 		flag_stop = False
-		conn=pymongo.MongoClient(self.db_address, 27017, max_pool_size=10)
+		#conn=pymongo.MongoClient(self.db_address, 27017, max_pool_size=10)
 		while not list_link is None:
 			context_list_obj = self.context_list_parse(list_link)
 
@@ -780,13 +814,13 @@ class PttWebParser	:
 							#save to db
 							#conn=pymongo.Connection('54.251.147.205',27017)
 						
-							db = conn[board_name]#conn['Gossiping']
+							''''db = conn[board_name]#conn['Gossiping']
 							self._context_to_single_db(db, context_obj)
 							self._context_to_group_db(db, context_obj)
 							#如果超過指定時間結束
 							if context_obj['time'] < endTime:
 								flag_stop = True
-
+							'''
 			#====
 
 			# for context_list in context_list_obj['context_list']:
@@ -808,7 +842,7 @@ class PttWebParser	:
 				list_link = None
 			else:
 				list_link = 	context_list_obj['next_list']
-			print 	list_link
+			print 	(list_link)
 		conn.disconnect()	
 	
 		# #print
@@ -995,7 +1029,7 @@ def test1():
 		features = 'html5lib'
 	else:
 		features = 'lxml'
-	print 'use features: ' + features
+	print ('use features: ' + features)
 	parser = PttWebParser()
 	# print parser.context_parse('http://www.ptt.cc/bbs/Gossiping/M.1400819015.A.454.html')
 	# print parser.context_parse('http://www.ptt.cc/bbs/Gossiping/M.1400819040.A.771.html')

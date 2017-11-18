@@ -29,7 +29,7 @@ def update_board_data():
 	parser.board_parse('HatePolitics', 72)
 	parser.board_parse('NBA', 24)
 	parser.board_parse('LoL', 24)
-        parser.board_parse('C_Chat', 24)
+	parser.board_parse('C_Chat', 24)
 	parser.board_parse('Boy-Girl', 24)
 	update_board_list(board_list)		
 	# parser.context_parse("https://www.ptt.cc/bbs/Gossiping/M.1403079856.A.F28.html")
@@ -45,7 +45,7 @@ def fb_test():
 	oauth_response = subprocess.Popen(oauth_curl_cmd,
 	                                  stdout = subprocess.PIPE,
 	                                  stderr = subprocess.PIPE).communicate()[0]
-	print oauth_response
+	print(oauth_response)
 	try:
 	    oauth_access_token = urlparse.parse_qs(str(oauth_response))['access_token'][0]
 	except KeyError:
@@ -53,14 +53,14 @@ def fb_test():
 	    exit()
 	
 	graph = facebook.GraphAPI(oauth_access_token)	
-	print graph.get_object('http://www.yahoo.com')
-	print graph.get_object('6127898346')
+	print (graph.get_object('http://www.yahoo.com'))
+	print (graph.get_object('6127898346'))
 
 	# print graph.get_object('fql?q=SELECT%20url,%20normalized_url,%20share_count,%20like_count,%20comment_count,%20total_count,commentsbox_count,%20comments_fbid,%20click_count%20FROM%20link_stat%20WHERE%20url=%27http://www.yahoo.com%27')
 	link = 'http://www.ptt.cc/bbs/sex/M.1401768579.A.49F.html'
 	# print graph.fql({'example':"SELECT url,normalized_url,share_count,like_count,comment_count,total_count,commentsbox_count,comments_fbid,click_count FROM link_stat WHERE url=\'" + link+ "\'"})
-	print graph.fql({'example':"SELECT url,normalized_url,share_count,like_count,comment_count,total_count,commentsbox_count,comments_fbid,click_count FROM link_stat WHERE url='http://www.ptt.cc/bbs/sex/M.1401781334.A.72D.html'"})
+	print (graph.fql({'example':"SELECT url,normalized_url,share_count,like_count,comment_count,total_count,commentsbox_count,comments_fbid,click_count FROM link_stat WHERE url='http://www.ptt.cc/bbs/sex/M.1401781334.A.72D.html'"}))
 if __name__ == "__main__":
 	
-	update_board_data()
+	#update_board_data()
 	#fb_test()
