@@ -18,7 +18,8 @@ import sys, os
 #import tweepy
 import shutil
 
-#import facebook
+# install facebook module : https://facebook-sdk.readthedocs.io/en/latest/install.html#installing-from-git
+import facebook
 import urllib
 #import urlparse
 import subprocess
@@ -31,9 +32,10 @@ from selenium.webdriver.common.by import By
 from multiprocessing import Pool, Process, Value, Array, Manager, Lock
 
 def run_context_parse(obj, param):
-	context = obj.context_parse(param)
-	with open((os.path.dirname(os.path.abspath(__file__)) + "/temp.json"), "w") as f:	
-		f.write(json.dumps(context, indent=4))
+	print('empty')
+	#context = obj.context_parse(param)
+	#with open((os.path.dirname(os.path.abspath(__file__)) + "/temp.json"), "w") as f:	
+	#	f.write(json.dumps(context, indent=4))
 
 class TwitterRecorder:
 	def	__init__(self):
@@ -64,22 +66,34 @@ class PttWebParser	:
 		else:
 			self.features = 'lxml'
 
-		'''oauth_args = dict(client_id     = '482698495096073',
-	                  client_secret = '8c58b055fcb762a9780638dc401c85e2',
-	                  grant_type    = 'client_credentials')
+		fb_data = None
+		with open("fb_setting.json", "r") as f:
+			fb_data = f.read() 
+		fb_obj = json.loads(fb_data)	
+	
+		self.graph = facebook.GraphAPI()
+		self.graph.access_token = self.graph.get_app_access_token(fb_obj['app_id'], fb_obj['app_secret'])
 
-		oauth_curl_cmd = ['curl',
-		                  'https://graph.facebook.com/oauth/access_token?' + urllib.urlencode(oauth_args)]
-		oauth_response = subprocess.Popen(oauth_curl_cmd,
-		                                  stdout = subprocess.PIPE,
-		                                  stderr = subprocess.PIPE).communicate()[0]
+		
+
+
+		'''
+		oauth_args = dict(	client_id     = '482698495096073',
+							client_secret = '8c58b055fcb762a9780638dc401c85e2',
+							grant_type    = 'client_credentials')
+
+		oauth_curl_cmd = [	'curl',
+							'https://graph.facebook.com/oauth/access_token?' + urllib.parse.urlencode(oauth_args)]
+		oauth_response = subprocess.Popen(	oauth_curl_cmd, 
+											stdout = subprocess.PIPE,
+											stderr = subprocess.PIPE).communicate()[0]
 		print (oauth_curl_cmd)
 		print (str(oauth_response))
 		try:
-		    oauth_access_token = urlparse.parse_qs(str(oauth_response))['access_token'][0]
-		    self.graph = facebook.GraphAPI(oauth_access_token)
+			oauth_access_token = urlparse.parse_qs(str(oauth_response))['access_token'][0]
+			self.graph = facebook.GraphAPI(oauth_access_token)
 		except KeyError:
-		    print('Unable to grab an access token!')
+			print('Unable to grab an access token!')
 		'''
 		# self._pre_dict_combine('combine_dict.txt')
 		# jieba.set_dictionary('combine_dict.txt')
@@ -130,9 +144,15 @@ class PttWebParser	:
 				f.write(data['key'] + ' ' + data['feq'] + ' ' + data['type'])
 		#print add_data		
 	'''
+	def context_over18(self):
+		if self.web.current_url.find('over18') != -1:
+			print ('over 18 page process')
+			yes = self.web.find_element_by_xpath("//button[@name='yes']")
+			yes.click()
+
+
 	def context_list_parse(self, link):
 
-		flagStop = False
 		list_detail = {}
 		
 		print ('process list:' + link)
@@ -148,7 +168,8 @@ class PttWebParser	:
 				print(self.web.page_source)
 			
 			except Exception as e:
-				logger.error('Failed to upload to ftp: '+ str(e))
+				#logger.error('Failed to upload to ftp: '+ str(e))
+				print(str(e))
 				print ('re Try')
 			try_time = try_time + 1	
 
@@ -159,14 +180,8 @@ class PttWebParser	:
 			except selenium.common.exceptions.NoSuchElementException as ne:
 				print ('re Try')
 			
-		print('out load')
-		if flagStop:
-			return list_detail
-	
-		if self.web.current_url.find('over18') != -1:
-			print ('over 18 page process')
-			yes = self.web.find_element_by_xpath("//button[@name='yes']")
-			yes.click()
+
+		self.context_over18()
 			
 	
 		nextIdx = 0;
@@ -185,7 +200,7 @@ class PttWebParser	:
 				# listLink = 'http://www.ptt.cc' + pageLink['href']
 				list_detail['next_list'] = 'http://www.ptt.cc' + pageLink['href']
 		'''
-		print(pageLinkDiv)
+
 		pre_link_a = pageLinkDiv.find_element_by_xpath(".//a[2]")
 		print(pre_link_a)
 		print(pre_link_a.text)
@@ -203,8 +218,15 @@ class PttWebParser	:
 			if content.get_attribute('class') == 'r-list-sep':
 				break
 			if content.get_attribute('class') == 'r-ent':
-				title_elm = content.find_element_by_class_name('title')
-				link_elm = title_elm.find_element_by_tag_name('a') 
+				try:
+					title_elm = content.find_element_by_class_name('title')
+					link_elm = title_elm.find_element_by_tag_name('a') 
+					meta_elm = content.find_element_by_class_name('meta')
+					date_elm = meta_elm.find_element_by_class_name('date')
+					nrec_elm = content.find_element_by_class_name('nrec')
+					push_elm = nrec_elm.find_element_by_tag_name('span')
+				except:
+					continue
 				title = link_elm.text
 				link = link_elm.get_property("href")
 				print(title)
@@ -214,52 +236,39 @@ class PttWebParser	:
 				id = m.groups()[1]
 				print(id)
 
-			'''titleDiv = recordDiv.find("div", {"class":"title"})
-			metaDiv = recordDiv.find("div", {"class":"meta"})
-	
-			titleLink = titleDiv.find('a', href=True);
-			if not titleLink is None:
-				print ('===')
-				print (titleLink['href'])
-				print (titleLink.string.encode('utf8'))
-				
-    	        
-				m = re.search('\/bbs\/([A-Za-z0-9_\-]+)\/([A-Za-z0-9\.]+)\.html', titleLink['href'])
-				print (m.groups()[0])
-				id = m.groups()[1]
-				contentLink = 'http://www.ptt.cc' + titleLink['href']
-				
-				if 'context_list' in list_detail:
-					list_detail['context_list'].append({'title': titleLink.string.encode('utf8'), 'link': contentLink, 'cid': id})
-				else:
-					list_detail['context_list'] = []
-'''
-			if 'context_list' not in list_detail:
-				list_detail['context_list'] = []
+				m = re.search('([0-9]+)\/([0-9]+)', date_elm.text)
+				print(date_elm.text)
+				date = int(m.groups()[0]) * 100 + int(m.groups()[1])
+				print(date)
 
-			list_detail['context_list'].append({'title': title.encode('utf8'), 'link': link, 'cid': id})
+				push_cnt = 0
+				if '爆' in push_elm.text:
+					push_cnt = 100
+				elif 'X' not in push_elm.text:
+					push_cnt = int(push_elm.text)
 			
-		print(list_detail)			
-		self.web.close()
+				if 'context_list' not in list_detail:
+					list_detail['context_list'] = []
+
+				fb = self._fb_parse(link, push_cnt)		
+
+				list_detail['context_list'].append({'title': title, 'link': link, 'cid': id, 'push' : push_cnt, 'date' : date_elm.text, 'fb' : fb})
+				
 		return list_detail		
 
 	def context_parse(self, content_link):
-		response = None
+		is_success = True
 		print (content_link)
 		try:
-			response = self.br.open(content_link)
-			print ('contentGet:' + response.geturl())
-
-			if response.geturl().find('over18') != -1:
-				print ('over 18 page process')
-				self.br.select_form(nr=0)
-				response = self.br.submit(name='yes', label='yes')
+			self.web.get(content_link)
+			self.context_over18()
 		except:	
-			response = None
+			is_success = False
 
-		content_obj = None
-	
-		if not response is None:
+		if is_success:
+			page_content = self.web.find_element_by_css_selector('.bbs-screen.bbs-content')
+
+			'''
 			only_div_push = SoupStrainer("div", {"class":"push"})
 			soup = BeautifulSoup(copy.copy(response), features=self.features, parse_only=only_div_push)
 			pushGoodCount = 0
@@ -398,39 +407,16 @@ class PttWebParser	:
 			if fb_data:
 				score = score + fb_data['like_count'] + fb_data['share_count'] + fb_data['comment_count']
 			content_obj['score'] = score
-			
+			'''
 		return content_obj	
 
 	def _fb_parse(self, origin_link, push_count):
-		# #[{"like_count":1421162,"share_count":5664540,"comment_count":1748801}]
-		# url = 'https://api.facebook.com/method/fql.query?format=json&query=select%20%20like_count,%20share_count,comment_count%20from%20link_stat%20where%20url=%22' + origin_link.string + '%22'
-		# response = self.br.open(url, timeout=30.0)
-		# response_str = response.read()
-		# fb_json = json.loads(response_str)
-		# time.sleep(3)
-		# print fb_json
-		# return fb_json[0]
 
-		# [{u'fql_result_set': [{u'normalized_url': u'http://www.yahoo.com/', u'commentsbox_count': 4690, u'click_count': 0, u'url': u'http://www.yahoo.com', u'total_count': 259986, u'comment_count': 34555, u'like_count': 73902, u'comments_fbid': 386757221287, u'share_count': 151529}], u'name': u'example'}]
-		fb_data = None
-		if push_count < 10:
-			return fb_data
-
-		fb_data = {}
-		if  self.graph : #graph.fql({'example':"SELECT url,normalized_url,share_count,like_count,comment_count,total_count,commentsbox_count,comments_fbid,click_count FROM link_stat WHERE url=\'" + link+ "\'"})
-			fql_str = "SELECT url,normalized_url,share_count,like_count,comment_count,total_count,commentsbox_count,comments_fbid,click_count FROM link_stat WHERE url=\'" + origin_link+ "\'"
-			# fql_results = self.graph.fql({'example':"SELECT url,normalized_url,share_count,like_count,comment_count,total_count,commentsbox_count,comments_fbid,click_count FROM link_stat WHERE url='http://www.ptt.cc/bbs/sex/M.1401765380.A.52C.html'"})
-			fql_results = self.graph.fql({'example': str(fql_str)})
-			print (fql_str)
-			print ("<<<<<<<<")
-			print (fql_results)
-			for result in fql_results:
-				if result['name'] == 'example':
-					fb_data['share_count'] = result['fql_result_set'][0]['share_count']
-					fb_data['like_count'] = result['fql_result_set'][0]['like_count']
-					fb_data['comment_count'] = result['fql_result_set'][0]['comment_count']
-		print (fb_data)		
-		return fb_data
+		if  self.graph : 
+			# ref: https://developers.facebook.com/docs/graph-api/reference/v2.11/url/
+			fb_get = self.graph.get_object(id=origin_link, fields="engagement")
+			
+		return fb_get['engagement']
 
 	def _link_parse(self, response, origin_link):
 		#取連結
@@ -782,6 +768,7 @@ class PttWebParser	:
 		# global db_address
 		# global sixHourBeforeTime
 	
+		list_data = []
 		linkData = {}
 		contextData = {}
 		groupData = {}
@@ -804,6 +791,7 @@ class PttWebParser	:
 		# 	formProcess2(listLink)#HatePolitics
 
 		flag_stop = False
+		count = 0
 		#conn=pymongo.MongoClient(self.db_address, 27017, max_pool_size=10)
 		while not list_link is None:
 			context_list_obj = self.context_list_parse(list_link)
@@ -811,28 +799,11 @@ class PttWebParser	:
 			#=== 採用multiprocess解決記憶體過大問題
 			for context_list in context_list_obj['context_list']:
 				# pool.apply_async(run_context_parse, (self, context_list['link'], ))
-				p = Process(target=run_context_parse, args=(self, context_list['link']))
-				p.start()
-				p.join()
-
-				tmpPath = os.path.dirname(os.path.abspath(__file__)) + "/temp.json"
-
-				if os.path.isfile(tmpPath):
-					with open(tmpPath, "r") as f:
-						context_obj = json.loads(f.read())
-						if context_obj:
-							self._complete_context(context_obj, context_list)
-				 	
-							#save to db
-							#conn=pymongo.Connection('54.251.147.205',27017)
-						
-							''''db = conn[board_name]#conn['Gossiping']
-							self._context_to_single_db(db, context_obj)
-							self._context_to_group_db(db, context_obj)
-							#如果超過指定時間結束
-							if context_obj['time'] < endTime:
-								flag_stop = True
-							'''
+				#p = Process(target=run_context_parse, args=(self, context_list['link']))
+				#p.start()
+				#p.join()
+				print("__" + str(context_list))
+				run_context_parse(self, context_list['link'])
 			#====
 
 			# for context_list in context_list_obj['context_list']:
@@ -849,14 +820,29 @@ class PttWebParser	:
 			# 		#如果超過指定時間結束
 			# 		if context_obj['time'] < endTime:
 			# 			flag_stop = True
+
+			count  =  count + len(context_list_obj['context_list'])
+
+			for data in context_list_obj['context_list']:
+				list_data.append(data)
+
+			if count >= 100:
+				flag_stop = True
+
 					
 			if flag_stop:
 				list_link = None
 			else:
-				list_link = 	context_list_obj['next_list']
+				list_link = context_list_obj['next_list']
 			print 	(list_link)
-		conn.disconnect()	
-	
+			
+		#conn.disconnect()	
+		self.web.close()
+
+		jsonStr = json.dumps(list_data, indent=4)
+		with open("data.json", "w") as f:
+			f.write(jsonStr) 	
+
 		# #print
 		# for key in linkData.keys():
 		# 	print key.encode('utf8') + ':' + str(linkData[key])
