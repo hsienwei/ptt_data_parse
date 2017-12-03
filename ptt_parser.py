@@ -6,16 +6,13 @@ from bs4 import BeautifulSoup, SoupStrainer
 import urllib
 import re
 import json
-#from dateutil import parser
+from dateutil import parser
 import time
 import datetime
 #import pymongo
 import copy
 import platform
-#import jieba
-#import jieba.analyse
 import sys, os
-#import tweepy
 import shutil
 
 # install facebook module : https://facebook-sdk.readthedocs.io/en/latest/install.html#installing-from-git
@@ -36,20 +33,6 @@ def run_context_parse(obj, param):
 	#context = obj.context_parse(param)
 	#with open((os.path.dirname(os.path.abspath(__file__)) + "/temp.json"), "w") as f:	
 	#	f.write(json.dumps(context, indent=4))
-
-class TwitterRecorder:
-	def	__init__(self):
-		twitter_data = None
-		with open("twitter_setting.json", "r") as f:
-			twitter_data = f.read() 
-		twitter_obj = json.loads(twitter_data)	
-		auth = tweepy.OAuthHandler(twitter_obj['consumer_key'], twitter_obj['consumer_secret'])
-		auth.set_access_token(twitter_obj['access_token'], twitter_obj['access_token_secret'])
-		self.twitter_api = tweepy.API(auth)
-
-	def twitter_update(self, msg):
-		if not self.twitter_api is None:
-			self.twitter_api.update_status(msg)
 
 
 class PttWebParser	:
@@ -74,33 +57,6 @@ class PttWebParser	:
 		self.graph = facebook.GraphAPI()
 		self.graph.access_token = self.graph.get_app_access_token(fb_obj['app_id'], fb_obj['app_secret'])
 
-		
-
-
-		'''
-		oauth_args = dict(	client_id     = '482698495096073',
-							client_secret = '8c58b055fcb762a9780638dc401c85e2',
-							grant_type    = 'client_credentials')
-
-		oauth_curl_cmd = [	'curl',
-							'https://graph.facebook.com/oauth/access_token?' + urllib.parse.urlencode(oauth_args)]
-		oauth_response = subprocess.Popen(	oauth_curl_cmd, 
-											stdout = subprocess.PIPE,
-											stderr = subprocess.PIPE).communicate()[0]
-		print (oauth_curl_cmd)
-		print (str(oauth_response))
-		try:
-			oauth_access_token = urlparse.parse_qs(str(oauth_response))['access_token'][0]
-			self.graph = facebook.GraphAPI(oauth_access_token)
-		except KeyError:
-			print('Unable to grab an access token!')
-		'''
-		# self._pre_dict_combine('combine_dict.txt')
-		# jieba.set_dictionary('combine_dict.txt')
-		#dict_path = os.path.dirname(os.path.abspath(__file__)) + '/dict.txt'
-		#print (dict_path)
-		#jieba.set_dictionary(dict_path)
-		#jieba.initialize()
 	
 	'''
 	def _pre_dict_combine(self, combine_file_path):
@@ -165,7 +121,6 @@ class PttWebParser	:
 					flagStop = True
 					break
 				self.web.get(link)
-				print(self.web.page_source)
 			
 			except Exception as e:
 				#logger.error('Failed to upload to ftp: '+ str(e))
@@ -184,25 +139,12 @@ class PttWebParser	:
 		self.context_over18()
 			
 	
-		nextIdx = 0;
-		#nextLink = None
-	
-		#only_div_btngroup = SoupStrainer("div", {"class":"btn-group pull-right"})
-		#only_div_r_ent = SoupStrainer("div", {"class":"r-ent"})
-		#response2 = copy.copy(response)
-		#soup = BeautifulSoup(copy.copy(self.web.page_source), features=self.features, parse_only=only_div_btngroup);
-		#soup2 = BeautifulSoup(copy.copy(self.web.page_source), features=self.features, parse_only=only_div_r_ent);
+		nextIdx = 0
 	
 		#下一頁面連結取得
-		pageLinkDiv = self.web.find_element_by_css_selector('.btn-group.btn-group-paging')   #soup.find("div", {"class":"btn-group pull-right"})
-		'''for pageLink in pageLinkDiv.findAll('a', href=True):
-			if pageLink.string.encode('utf8').find('上頁') != -1:
-				# listLink = 'http://www.ptt.cc' + pageLink['href']
-				list_detail['next_list'] = 'http://www.ptt.cc' + pageLink['href']
-		'''
+		pageLinkDiv = self.web.find_element_by_css_selector('.btn-group.btn-group-paging')   
 
 		pre_link_a = pageLinkDiv.find_element_by_xpath(".//a[2]")
-		print(pre_link_a)
 		print(pre_link_a.text)
 		next_link = pre_link_a.get_property("href")
 		print(next_link)
@@ -253,12 +195,16 @@ class PttWebParser	:
 				fb = self._fb_parse(link, push_cnt)		
 
 				list_detail['context_list'].append({'title': title, 'link': link, 'cid': id, 'push' : push_cnt, 'date' : date_elm.text, 'fb' : fb})
+
+
+				#list_detail['context_list']['score'] = push_cnt + fb
 				
 		return list_detail		
 
 	def context_parse(self, content_link):
 		is_success = True
 		print (content_link)
+		content_obj = {}
 		try:
 			self.web.get(content_link)
 			self.context_over18()
@@ -268,6 +214,16 @@ class PttWebParser	:
 		if is_success:
 			page_content = self.web.find_element_by_css_selector('.bbs-screen.bbs-content')
 
+			article_elm = page_content.find_elements_by_class_name('article-metaline')
+			time_str = article_elm[2].find_element_by_class_name('article-meta-value').text
+			print(time_str)
+			parsedTimeStr = parser.parse(time_str).strftime("%Y-%m-%d %H:%M:%S")
+			print(parsedTimeStr)
+			contextTime = time.mktime(time.strptime(parsedTimeStr, '%Y-%m-%d %H:%M:%S'))
+			print(contextTime)
+			
+
+			content_obj['time'] = contextTime
 			'''
 			only_div_push = SoupStrainer("div", {"class":"push"})
 			soup = BeautifulSoup(copy.copy(response), features=self.features, parse_only=only_div_push)
@@ -411,10 +367,24 @@ class PttWebParser	:
 		return content_obj	
 
 	def _fb_parse(self, origin_link, push_count):
-
+		
 		if  self.graph : 
 			# ref: https://developers.facebook.com/docs/graph-api/reference/v2.11/url/
 			fb_get = self.graph.get_object(id=origin_link, fields="engagement")
+			
+			#
+			# 以下取like數, 感覺數字不太有用, 註解起來
+			#
+			'''
+			fb_get2 = self.graph.get_object(id=origin_link, fields="og_object")
+			print(fb_get2)
+			if 'og_object' in fb_get2:
+				# ref: https://developers.facebook.com/docs/graph-api/reference/v2.11/object/likes
+				like_cnt = self.graph.get_object(id=fb_get2['og_object']['id'] + '/likes', summary=True)
+				print(like_cnt)
+				fb_get['engagement']['likes'] = like_cnt['summary']['total_count']
+			'''
+				
 			
 		return fb_get['engagement']
 
@@ -774,14 +744,11 @@ class PttWebParser	:
 		groupData = {}
 		contextData2 = {}
 		flagStop = False
-		curTime = time.time()
+		cur_time = time.time()
 		print ('=== start time ===')
-		print (curTime)
-		print (datetime.datetime.fromtimestamp(curTime).strftime('%Y-%m-%d %H:%M:%S'))
-		endTime = curTime - 60 * 60 * time_range 
-		#rangeDay = curTime - 60 * 60 * boardData['rankHour']
-		sixHourBeforeTime = curTime - 60 * 60 * 6
-		print (datetime.datetime.fromtimestamp(endTime).strftime('%Y-%m-%d %H:%M:%S'))
+		print (datetime.datetime.fromtimestamp(cur_time).strftime('%Y-%m-%d %H:%M:%S'))
+		target_time = cur_time - 60 * 60 * time_range
+		print (datetime.datetime.fromtimestamp(target_time).strftime('%Y-%m-%d %H:%M:%S'))
 		print ('==================')
 	
     	#dataCollect();
@@ -791,43 +758,26 @@ class PttWebParser	:
 		# 	formProcess2(listLink)#HatePolitics
 
 		flag_stop = False
-		count = 0
-		#conn=pymongo.MongoClient(self.db_address, 27017, max_pool_size=10)
+		#count = 0
 		while not list_link is None:
 			context_list_obj = self.context_list_parse(list_link)
 
-			#=== 採用multiprocess解決記憶體過大問題
-			for context_list in context_list_obj['context_list']:
-				# pool.apply_async(run_context_parse, (self, context_list['link'], ))
-				#p = Process(target=run_context_parse, args=(self, context_list['link']))
-				#p.start()
-				#p.join()
-				print("__" + str(context_list))
-				run_context_parse(self, context_list['link'])
-			#====
-
-			# for context_list in context_list_obj['context_list']:
-			# 	context_obj = self.context_parse(context_list['link'])
-			# 	if context_obj:
-			# 	 	self._complete_context(context_obj, context_list)
-				 	
-			# 		#save to db
-			# 		#conn=pymongo.Connection('54.251.147.205',27017)
-					
-			# 		db = conn[board_name]#conn['Gossiping']
-			# 		self._context_to_single_db(db, context_obj)
-			# 		self._context_to_group_db(db, context_obj)
-			# 		#如果超過指定時間結束
-			# 		if context_obj['time'] < endTime:
-			# 			flag_stop = True
-
-			count  =  count + len(context_list_obj['context_list'])
+			#for context_list in context_list_obj['context_list']:
+			#	run_context_parse(self, context_list['link'])
+			
 
 			for data in context_list_obj['context_list']:
 				list_data.append(data)
 
-			if count >= 100:
+			# 檢查最後一則的時間.
+			list_last_link = context_list_obj['context_list'][0]['link']
+			print('-----------' + list_last_link)
+			context = self.context_parse(list_last_link)
+
+			if context['time'] < target_time:
 				flag_stop = True
+			#if count >= 100:
+			#	flag_stop = True
 
 					
 			if flag_stop:
@@ -1022,16 +972,10 @@ class PttWebParser	:
 
 
 def test1():
-	#global features
-	if platform.system() == 'Windows':
-		features = 'html5lib'
-	else:
-		features = 'lxml'
-	print ('use features: ' + features)
 	parser = PttWebParser()
 	# print parser.context_parse('http://www.ptt.cc/bbs/Gossiping/M.1400819015.A.454.html')
 	# print parser.context_parse('http://www.ptt.cc/bbs/Gossiping/M.1400819040.A.771.html')
-	parser.board_parse('Gossiping', 24)
+	parser.board_parse('Gossiping', 12)
 
 
 
