@@ -1,18 +1,12 @@
 PTT Watcher
 ==============
 
-一個分析ptt web版的網頁
+一個分析ptt web版的爬蟲
+主要爬web 版ptt來找熱門文章
 
-主要想要達到三個功能   
-1. 以討論程度做文章排行 (後來加上fb分享做判定)   
-2. 各媒體在某版的出現次數統計   
-3. 各版目前關鍵字   
+以討論程度做文章排行 (後來加上fb分享做判定)   
 
       
-web clawer : python (BeautifulSoup, mechanize, jieba)   
-web server: aws ec2, node.js , express, d3, mongoDB   
+web clawer : python3 (主要為selenium)   
 
-
-demo:   
-http://ec2-54-251-147-205.ap-southeast-1.compute.amazonaws.com
 
