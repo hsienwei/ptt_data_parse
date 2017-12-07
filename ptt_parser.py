@@ -37,17 +37,8 @@ def run_context_parse(obj, param):
 
 class PttWebParser	:
 	def __init__(self):
-		#self.br = br = mechanize.Browser()
-		#self.br.set_handle_robots(False) # ignore robots
-		#self.br.set_handle_refresh(False)
-		#self.sixHourBeforeTime = time.time() - 60 * 60 * 6
-		#self.db_address = '127.0.0.1' #'54.251.147.205'
-		self.web = webdriver.Chrome(executable_path=r'.\chromedriver.exe')
 
-		if platform.system() == 'Windows':
-			self.features = 'html5lib'
-		else:
-			self.features = 'lxml'
+		self.web = webdriver.Chrome(executable_path=r'.\chromedriver.exe')
 
 		fb_data = None
 		with open("fb_setting.json", "r") as f:
@@ -192,12 +183,19 @@ class PttWebParser	:
 				if 'context_list' not in list_detail:
 					list_detail['context_list'] = []
 
-				fb = self._fb_parse(link, push_cnt)		
+				fb = self._fb_parse(link, push_cnt)
+				score = fb['reaction_count'] + fb['comment_count'] + fb['share_count'] + fb['comment_plugin_count'] + push_cnt
 
-				list_detail['context_list'].append({'title': title, 'link': link, 'cid': id, 'push' : push_cnt, 'date' : date_elm.text, 'fb' : fb})
-
-
-				#list_detail['context_list']['score'] = push_cnt + fb
+				list_detail['context_list'].append(
+					{
+						'title': title, 
+						'link': link, 
+						'cid': id, 
+						'push' : push_cnt, 
+						'date' : date_elm.text, 
+						'fb' : fb, 
+						'score' : score
+					})
 				
 		return list_detail		
 
@@ -726,6 +724,7 @@ class PttWebParser	:
 			db.group.save(find_group)	
 
 	def board_parse(self, board_name, time_range):
+		
 		# global linkData
 		# global contextData
 		# global groupData
@@ -752,7 +751,6 @@ class PttWebParser	:
 		print ('==================')
 	
     	#dataCollect();
-		#board = 'beauty'#'Gossiping'
 		list_link = "http://www.ptt.cc/bbs/" + board_name + "/index.html"
 		# while flagStop is False:
 		# 	formProcess2(listLink)#HatePolitics
@@ -761,10 +759,6 @@ class PttWebParser	:
 		#count = 0
 		while not list_link is None:
 			context_list_obj = self.context_list_parse(list_link)
-
-			#for context_list in context_list_obj['context_list']:
-			#	run_context_parse(self, context_list['link'])
-			
 
 			for data in context_list_obj['context_list']:
 				list_data.append(data)
@@ -776,9 +770,6 @@ class PttWebParser	:
 
 			if context['time'] < target_time:
 				flag_stop = True
-			#if count >= 100:
-			#	flag_stop = True
-
 					
 			if flag_stop:
 				list_link = None
@@ -786,13 +777,18 @@ class PttWebParser	:
 				list_link = context_list_obj['next_list']
 			print 	(list_link)
 			
-		#conn.disconnect()	
-		self.web.close()
+
+		
 
 		jsonStr = json.dumps(list_data, indent=4)
-		with open("data.json", "w") as f:
+		with open(board_name + "_data.json", "w") as f:
 			f.write(jsonStr) 	
 
+		top10 = sorted(list_data, key=lambda data: data['score'], reverse=True)[:10]
+		print(top10)
+
+		with open(board_name + "_data_10.json", "w") as f:
+			f.write(json.dumps(top10, indent=4))
 		# #print
 		# for key in linkData.keys():
 		# 	print key.encode('utf8') + ':' + str(linkData[key])
@@ -976,8 +972,10 @@ def test1():
 	# print parser.context_parse('http://www.ptt.cc/bbs/Gossiping/M.1400819015.A.454.html')
 	# print parser.context_parse('http://www.ptt.cc/bbs/Gossiping/M.1400819040.A.771.html')
 	parser.board_parse('Gossiping', 12)
+	parser.board_parse('beauty', 12)
+	parser.board_parse('C_Chat', 12)
 
-
+	parser.web.close()
 
 if __name__ == "__main__":
 	test1()
