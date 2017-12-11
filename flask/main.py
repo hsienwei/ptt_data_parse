@@ -1,4 +1,4 @@
-from flask import Flask, request, abort
+from flask import Flask, request, abort, send_from_directory
 
 from linebot import (
     LineBotApi, WebhookHandler
@@ -20,8 +20,13 @@ line_bot_api = LineBotApi(CHANNEL_ACCESS_TOKEN)
 handler = WebhookHandler(CHANNEL_SECRET)
 
 
+@app.route('/.well-known/acme-challenge/<path:path>')
+def send_js(path):
+    return send_from_directory('static', path)
+
 @app.route("/callback", methods=['POST'])
 def callback():
+    print("b")
     # get X-Line-Signature header value
     signature = request.headers['X-Line-Signature']
 
@@ -40,10 +45,19 @@ def callback():
 
 @handler.add(MessageEvent, message=TextMessage)
 def handle_message(event):
+    print("a")
     line_bot_api.reply_message(
         event.reply_token,
         TextSendMessage(text=event.message.text))
 
 
+
 if __name__ == "__main__":
-    app.run()
+    #app.run()
+    # set OPENSSL_CONF=E:/openssl-0.9.8h-1-bin/share/openssl.cnf
+    # openssl genrsa 1024 > ssl.key
+    # openssl req -new -x509 -nodes -sha256 -days 365 -key ssl.key > ssl.cert
+    # openssl req -nodes -newkey rsa:2048 -keyout myserver.key -out server.csr   
+    context = ('server.csr', 'myserver.key')
+    app.run(host='34.238.242.30', port=443, ssl_context='AdHoc', threaded=True, debug=True)
+    #app.run(host='220.135.224.98', port=80, threaded=True, debug=True)
