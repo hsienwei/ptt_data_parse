@@ -2,10 +2,11 @@
 
 #import mechanize
 import time
-from bs4 import BeautifulSoup, SoupStrainer
+#from bs4 import BeautifulSoup, SoupStrainer
 import urllib
 import re
 import json
+# pip install  python-dateutil
 from dateutil import parser
 import time
 import datetime
@@ -24,6 +25,8 @@ import warnings
 import subprocess
 from selenium import webdriver
 from selenium.webdriver.common.by import By
+
+#pip install boto3
 
 
 from multiprocessing import Pool, Process, Value, Array, Manager, Lock
@@ -185,7 +188,7 @@ class PttWebParser	:
 
 				fb = self._fb_parse(link, push_cnt)
 				score = fb['reaction_count'] + fb['comment_count'] + fb['share_count'] + fb['comment_plugin_count'] + push_cnt
-
+				print(score)
 				list_detail['context_list'].append(
 					{
 						'title': title, 
@@ -213,6 +216,10 @@ class PttWebParser	:
 			page_content = self.web.find_element_by_css_selector('.bbs-screen.bbs-content')
 
 			article_elm = page_content.find_elements_by_class_name('article-metaline')
+			print(article_elm)
+			if len(article_elm) is 0:
+				return content_obj
+            
 			time_str = article_elm[2].find_element_by_class_name('article-meta-value').text
 			print(time_str)
 			parsedTimeStr = parser.parse(time_str).strftime("%Y-%m-%d %H:%M:%S")
@@ -969,11 +976,11 @@ class PttWebParser	:
 
 def test1():
 	parser = PttWebParser()
-	# print parser.context_parse('http://www.ptt.cc/bbs/Gossiping/M.1400819015.A.454.html')
-	# print parser.context_parse('http://www.ptt.cc/bbs/Gossiping/M.1400819040.A.771.html')
-	parser.board_parse('Gossiping', 12)
+	#print(parser.context_parse('https://www.ptt.cc/bbs/C_Chat/M.1520518343.A.07A.html'))
+
+	#parser.board_parse('Gossiping', 12)
 	parser.board_parse('beauty', 12)
-	parser.board_parse('C_Chat', 12)
+	#parser.board_parse('C_Chat', 12)
 
 	parser.web.close()
 
