@@ -3,25 +3,38 @@
 import boto3
 import json
 import decimal
+import csv
 
-dynamodb = boto3.resource('dynamodb', aws_access_key_id=' ',
-         aws_secret_access_key=' ' , region_name='us-east-1', endpoint_url="http://localhost:8000")
+class AwsDB:
+    
+        
+    def open(self, file_name):
 
-table = dynamodb.Table('ptt')
+        with open(file_name, 'r') as csvfile:
+            spamreader = csv.DictReader(csvfile, delimiter=',')
+            print(spamreader)
+            for row in spamreader:
+                self.access_key_id = row['Access key ID']
+                self.secret_access_key = row['Secret access key']
+                break
 
-ID = "test1"
-DATE = 2015
-
-response = table.put_item(
-   Item={
-        'ID': ID,
-        'DATE': DATE,
-        'info': {
-            'plot':"Nothing happens at all."
-
-        }
-    }
-)
-
-print("PutItem succeeded:")
-print(json.dumps(response, indent=4, cls=DecimalEncoder))
+        self.dynamodb = boto3.resource('dynamodb', aws_access_key_id=self.access_key_id,
+             aws_secret_access_key=self.secret_access_key , region_name='us-east-1')     
+             
+    def store_to_db(self, name, json_ary ):
+        table = self.dynamodb.Table('ptt_data')
+        
+        for item in json_ary :
+            SCORE = item['score']
+            jsonStr = json.dumps(item, indent=4)
+            response = table.put_item(
+                Item={
+                    'board': name,
+                    'score': SCORE,
+                    'info': jsonStr
+                }
+            )
+            
+    def __init__(self, file_name):
+        print('init')
+        self.open(file_name)   
