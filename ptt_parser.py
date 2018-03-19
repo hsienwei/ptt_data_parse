@@ -978,18 +978,16 @@ def save_board_data_to_db(parser, db, board_name, hour):
         
 
 def test1():
-    parser = PttWebParser()
+    #parser = PttWebParser()
     db = dynamodb_conn.AwsDB('accessKeys_dbm.csv')
     
     #print(parser.context_parse('https://www.ptt.cc/bbs/C_Chat/M.1520518343.A.07A.html'))
-    save_board_data_to_db(parser, db, 'Gossiping', 4)
-    save_board_data_to_db(parser, db, 'C_Chat', 4)
+    #save_board_data_to_db(parser, db, 'Gossiping', 4)
+    #save_board_data_to_db(parser, db, 'C_Chat', 4)
 
-
-        
-    #parser.board_parse('C_Chat', 12)
-
-    parser.web.close()
+    db.get_data('C_Chat')
+    
+    #parser.web.close()
     
     
     
