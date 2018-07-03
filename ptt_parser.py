@@ -1015,16 +1015,21 @@ def test_db_save(board_name, data):
 def test_db_load(board_name):
     db = dynamodb_conn.AwsDB('accessKeys_dbm.csv')
     db.get_data(board_name)
-    
+
+def test_parse_to_db(board_name, hr):
+    data = test_parse_board(board_name, hr)    
+    test_db_save(board_name, data)
+    test_db_load(board_name)
     
 if __name__ == "__main__":
-    data = test_parse_board('Gossiping', 1)
-    test_data_to_file('Gossiping', data)
+    #data = test_parse_board('Gossiping', 1)
+    #test_data_to_file('Gossiping', data)
     #data = test_file_to_data('Gossiping')
-    test_db_save('Gossiping', data)
-    test_db_load('Gossiping')
+    #test_db_save('Gossiping', data)
+    #test_db_load('Gossiping')
     
-
+    test_parse_to_db('Gossiping', 4)
+    test_parse_to_db('C_Chat', 4)
 
              
      
