@@ -214,7 +214,10 @@ class PttWebParser  :
             is_success = False
 
         if is_success:
-            page_content = self.web.find_element_by_css_selector('.bbs-screen.bbs-content')
+            try:
+                page_content = self.web.find_element_by_css_selector('.bbs-screen.bbs-content')
+            except:  
+                return content_obj  
 
             article_elm = page_content.find_elements_by_class_name('article-metaline')
             print(article_elm)
@@ -1015,6 +1018,14 @@ def test_db_save(board_name, data):
 def test_db_load(board_name):
     db = dynamodb_conn.AwsDB('accessKeys_dbm.csv')
     db.get_data(board_name)
+    
+def test_db_check(board_name)    :
+    db = dynamodb_conn.AwsDB('accessKeys_dbm.csv')
+    print(db.check_bbs_board_data_exist(board_name))
+    
+def test_db_board_list():
+    db = dynamodb_conn.AwsDB('accessKeys_dbm.csv')
+    print(db.bbs_board_list())
 
 def test_parse_to_db(board_name, hr):
     data = test_parse_board(board_name, hr)    
@@ -1027,9 +1038,13 @@ if __name__ == "__main__":
     #data = test_file_to_data('Gossiping')
     #test_db_save('Gossiping', data)
     #test_db_load('Gossiping')
+    #test_db_check('aaa')
+    #test_db_board_list()
     
-    test_parse_to_db('Gossiping', 4)
-    test_parse_to_db('C_Chat', 4)
+    #test_parse_to_db('Gossiping', 8)
+    #test_parse_to_db('C_Chat', 8)
+    #test_parse_to_db('HatePolitics', 8)
+    test_parse_to_db('beauty', 8)
 
              
      

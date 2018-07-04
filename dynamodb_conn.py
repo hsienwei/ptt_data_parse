@@ -9,27 +9,32 @@ import time
 import datetime
 
 class AwsDB:
-    
-        
-    def open(self, file_name):
 
-        with open(file_name, 'r') as csvfile:
-            spamreader = csv.DictReader(csvfile, delimiter=',')
-            print(spamreader)
-            for row in spamreader:
-                self.access_key_id = row['Access key ID']
-                self.secret_access_key = row['Secret access key']
-                break
+    def open_by_file(self, file_name):
+        if file_name is None:
+            return
+            
+        try:
+            with open(file_name, 'r') as csvfile:
+                spamreader = csv.DictReader(csvfile, delimiter=',')
+                for row in spamreader:
+                    self.open(row['Access key ID'], row['Secret access key'])
+                    break
+        except:
+            print("Unexpected error")
+           
+    
+    def open(self, access_key_id, secret_access_key):
+        self.access_key_id = access_key_id
+        self.secret_access_key = secret_access_key
         self.client = boto3.client('dynamodb', aws_access_key_id=self.access_key_id,
              aws_secret_access_key=self.secret_access_key , region_name='us-east-1')
         self.dynamodb = boto3.resource('dynamodb', aws_access_key_id=self.access_key_id,
-             aws_secret_access_key=self.secret_access_key , region_name='us-east-1')     
-    
-    
+             aws_secret_access_key=self.secret_access_key , region_name='us-east-1')  
 
     def check_table_exist(self, table_name):
         return table_name in self.client.list_tables()['TableNames']        
-
+        
     def create_table(self, table_name):
         self.client.create_table(
             TableName = table_name, 
@@ -50,8 +55,34 @@ class AwsDB:
                 'ReadCapacityUnits': 5,
                 'WriteCapacityUnits': 5
             }, 
-        )    
-    
+        ) 
+
+    def check_bbs_board_data_exist(self, board_name):
+        meta_table_name = 'ptt_meta_data'    
+        is_exist = self.check_table_exist(meta_table_name)
+        if not is_exist:        
+            return False
+        else:
+            meta_table = self.dynamodb.Table(meta_table_name)
+            response = meta_table.query(
+                KeyConditionExpression=Key('id').eq(board_name),
+                Limit=1,
+                ScanIndexForward=False,
+            )
+            return len(response['Items']) != 0
+    def bbs_board_list(self):
+        board_list = []
+        meta_table_name = 'ptt_meta_data'    
+        is_exist = self.check_table_exist(meta_table_name)
+        if not is_exist:        
+            return 
+        else:
+            meta_table = self.dynamodb.Table(meta_table_name)
+            response = meta_table.scan()
+            for item in response['Items']:
+                board_list.append(item['id'])
+        return board_list        
+        
     def store_to_db(self, name, json_ary ):
         table_name = 'ptt_data'
         meta_table_name = 'ptt_meta_data'
@@ -129,16 +160,18 @@ class AwsDB:
                 ScanIndexForward=False,
             )
 
-        print(response['Items'][0]['info'])
+            print(response['Items'][0]['info'])
 
-        json_obj = json.loads(response['Items'][0]['info'])  
-        sorted_obj = sorted(json_obj, key=lambda x : x['score'], reverse=True)
+            json_obj = json.loads(response['Items'][0]['info'])  
+            sorted_obj = sorted(json_obj, key=lambda x : x['score'], reverse=True)
 
-        for item in sorted_obj:
-            print(item['title'] + str(item['score']))
+            for item in sorted_obj:
+                print(item['title'] + str(item['score']))
 
-        return sorted_obj[:10]
+            return sorted_obj[:10]
+        return []    
             
     def __init__(self, file_name):
         print('init')
-        self.open(file_name)   
+        self.open_by_file(file_name)   
+   
