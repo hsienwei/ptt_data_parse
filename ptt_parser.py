@@ -779,8 +779,11 @@ class PttWebParser  :
             print('-----------' + list_last_link)
             context = self.context_parse(list_last_link)
 
-            if context['time'] < target_time:
-                flag_stop = True
+            try:
+                if context['time'] < target_time:
+                    flag_stop = True
+            except:
+                flag_stop = False
                     
             if flag_stop:
                 list_link = None
@@ -977,7 +980,7 @@ def save_board_data_to_db(parser, db, board_name, hour):
     #   f.write(jsonStr)    
 
     sort_data = sorted(data, key=lambda data: data['score'], reverse=True)
-    db.store_to_db(board_name, sort_data)
+    db.store_to_db(board_name, sort_data[: 20])
         
 
 def test1():
@@ -1013,7 +1016,7 @@ def test_file_to_data(board_name):
 def test_db_save(board_name, data):
     db = dynamodb_conn.AwsDB('accessKeys_dbm.csv')
     sort_data = sorted(data, key=lambda data: data['score'], reverse=True)
-    db.store_to_db(board_name, sort_data)
+    db.store_to_db(board_name, sort_data[:20])
 
 def test_db_load(board_name):
     db = dynamodb_conn.AwsDB('accessKeys_dbm.csv')
@@ -1029,6 +1032,7 @@ def test_db_board_list():
 
 def test_parse_to_db(board_name, hr):
     data = test_parse_board(board_name, hr)    
+    test_data_to_file(board_name, data)
     test_db_save(board_name, data)
     test_db_load(board_name)
     
@@ -1041,10 +1045,10 @@ if __name__ == "__main__":
     #test_db_check('aaa')
     #test_db_board_list()
     
-    #test_parse_to_db('Gossiping', 8)
-    #test_parse_to_db('C_Chat', 8)
-    #test_parse_to_db('HatePolitics', 8)
-    test_parse_to_db('beauty', 8)
+    #test_parse_to_db('Gossiping', 24)
+    test_parse_to_db('C_Chat', 24)
+    test_parse_to_db('HatePolitics', 24)
+    test_parse_to_db('beauty', 24)
 
              
      
