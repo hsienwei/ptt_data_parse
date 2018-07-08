@@ -770,20 +770,23 @@ class PttWebParser  :
         #count = 0
         while not list_link is None:
             context_list_obj = self.context_list_parse(list_link)
+            print(context_list_obj)
 
-            for data in context_list_obj['context_list']:
-                list_data.append(data)
+            if 'context_list' in context_list_obj:
 
-            # 檢查最後一則的時間.
-            list_last_link = context_list_obj['context_list'][0]['link']
-            print('-----------' + list_last_link)
-            context = self.context_parse(list_last_link)
+                for data in context_list_obj['context_list']:
+                    list_data.append(data)
 
-            try:
-                if context['time'] < target_time:
-                    flag_stop = True
-            except:
-                flag_stop = False
+                # 檢查最後一則的時間.
+                list_last_link = context_list_obj['context_list'][0]['link']
+                print('-----------' + list_last_link)
+                context = self.context_parse(list_last_link)
+
+                try:
+                    if context['time'] < target_time:
+                        flag_stop = True
+                except:
+                    flag_stop = False
                     
             if flag_stop:
                 list_link = None
@@ -1046,9 +1049,12 @@ if __name__ == "__main__":
     #test_db_board_list()
     
     #test_parse_to_db('Gossiping', 24)
-    test_parse_to_db('C_Chat', 24)
-    test_parse_to_db('HatePolitics', 24)
-    test_parse_to_db('beauty', 24)
+    #test_parse_to_db('C_Chat', 24)
+    #test_parse_to_db('HatePolitics', 24)
+    #test_parse_to_db('beauty', 24)
+    test_parse_to_db('Food', 24)
+    #test_parse_to_db('ChungLi', 24)
+    #test_parse_to_db('movie', 24)
 
              
      
